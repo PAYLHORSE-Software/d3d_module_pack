@@ -6,7 +6,7 @@
 // Current SIMD support and prioritisation order:
 // AVX2
 // TODO AVX
-// TODO SSE41   
+// TODO SSE4
 // SSE2
 
 CPU_INFO :: #run get_cpu_info();
@@ -113,7 +113,7 @@ XMScalarSinCos :: (pSin: *float, pCos: *float, Value: float) {
 
 XMVector3Dot :: (V1: Vector3, V2: Vector3) -> XMVECTOR {
     dp := dot(V1, V2);
-    return xx make_vector4(dp);
+    return xx,force make_vector4(dp);
 }
 
 XMVector3Transform :: (V: Vector3, M: XMMATRIX) -> Vector3 {
@@ -133,6 +133,7 @@ XMVector3Transform :: (V: Vector3, M: XMMATRIX) -> Vector3 {
     // return vResult;
     // SSE2
     // SCALAR
+    
     Z : XMVECTOR = xx make_vector4(V.z);
     Y : XMVECTOR = xx make_vector4(V.y);
     X : XMVECTOR = xx make_vector4(V.x);
@@ -227,7 +228,7 @@ XMMatrixLookAtLH :: (
     UpDirection: XMVECTOR
 ) -> XMMATRIX {
     
-    EyeDirection : XMVECTOR = xx (FocusPosition - EyePosition);
+    EyeDirection : XMVECTOR = xx,force (FocusPosition - EyePosition);
     return XMMatrixLookToLH(EyePosition, EyeDirection, UpDirection);
 }
 
@@ -255,9 +256,9 @@ XMMatrixLookToLH :: (
 
     M: XMMATRIX;
 
-    M.v[0] = XMVectorSelect(D0, xx R0, g_XMSelect1110);
-    M.v[1] = XMVectorSelect(D1, xx R1, g_XMSelect1110);
-    M.v[2] = XMVectorSelect(D2, xx R2, g_XMSelect1110);
+    M.v[0] = XMVectorSelect(D0, .{xyz=R0, w=0}, g_XMSelect1110);
+    M.v[1] = XMVectorSelect(D1, .{xyz=R1, w=0}, g_XMSelect1110);
+    M.v[2] = XMVectorSelect(D2, .{xyz=R2, w=0}, g_XMSelect1110);
     M.v[3] = g_XMIdentityR3;
 
     M = transpose(M);
@@ -293,6 +294,7 @@ XMMatrixPerspectiveFovLH :: (
 	vTemp: XMVECTOR;
 	M: XMMATRIX;
 	
+        // TODO replace with SIMD module
 	#asm SSE2 {
 	    movss vTemp, vValues;
 	}
@@ -479,3 +481,4 @@ XMMatrixRotationRollPitchYawFromVector :: (Angles: XMVECTOR) {
 #import "Basic";
 #import "Math";
 #import "Machine_X64";
+#import "SIMD";

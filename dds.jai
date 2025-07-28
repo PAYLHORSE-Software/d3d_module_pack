@@ -87,19 +87,9 @@ DDS_PIXELFORMAT_FLAGS :: enum u32 {
     DDPF_LUMINANCE   :: 0x20000;
 }
 
+FOURCC_DX10 : u32 : 808540228;
+
 // PROCEDURES -------------------------------------------------
-
-/*
-====================
-dds_from_file
-
-Convenience, read_entire_file() then dds_from_memory().
-====================
-*/
-dds_from_file :: (path: string) -> DDS_Image {
-    bytecode := read_entire_file(path);
-    return dds_from_memory(bytecode.data, xx bytecode.count);
-}
 
 dds_from_memory :: (data: *u8, length: u64) -> DDS_Image {
 
@@ -108,7 +98,7 @@ dds_from_memory :: (data: *u8, length: u64) -> DDS_Image {
     magic: u32;
     memcpy_eat(*magic, cursor, size_of(u32));
     if magic != 0x20534444 {
-	print("[DDS] Bad magic, returning null!\n");
+	log("[dds] Bad magic, returning null!");
 	return NULL_DDS;
     }
 
@@ -118,7 +108,7 @@ dds_from_memory :: (data: *u8, length: u64) -> DDS_Image {
     // TODO: check validity of header? might be unneccessary
     // Check if header10
     if (dds_image.header.ddspf.dwFlags & .DDPF_FOURCC) &&
-	dds_image.header.ddspf.dwFourCC == xx "DX10" {
+        dds_image.header.ddspf.dwFourCC == FOURCC_DX10 {
         memcpy_eat(*dds_image.header10, cursor, size_of(DDS_HEADER_DXT10));
     }
 

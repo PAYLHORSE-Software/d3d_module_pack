@@ -1,5 +1,5 @@
 //  ---------
-// | MESHOPT |
+// | meshopt |
 //  ---------
 
 #load "bindings.jai";

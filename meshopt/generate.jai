@@ -58,7 +58,7 @@ generate_bindings :: (args: [] string) -> bool {
 
 HEADER :: #string DONE
 //  ------------------
-// | MESHOPT BINDINGS |
+// | meshopt bindings |
 //  ------------------
 DONE
 

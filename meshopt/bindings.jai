@@ -4,7 +4,7 @@
 // jai generate.jai
 //
 //  ------------------
-// | MESHOPT BINDINGS |
+// | meshopt bindings |
 //  ------------------
 
 
