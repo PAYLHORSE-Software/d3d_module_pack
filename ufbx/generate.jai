@@ -24,28 +24,24 @@ AT_COMPILE_TIME :: true;
 
 generate_bindings :: (args: [] string) -> bool {
 
+    output_filename: string;
     opts: Generate_Bindings_Options;
     {
         using opts;
 
-        array_add(*libraries, .{"lib/d3d12ma", "d3d12ma"});
-        array_add(*source_files, "D3D12MemAlloc.h");
-        array_add(*extra_clang_arguments, "-x", "c++", "-DWIN32_LEAN_AND_MEAN");
-        log_unsupported = true;
+        array_add(*source_files, "ufbx.c");
+        array_add(*libraries, .{filename="ufbx"});
+        array_add(*extra_clang_arguments, "-x", "c", "-DWIN32_LEAN_AND_MEAN");
+        log_unsupported = false;
         generate_compile_time_struct_checks = false;
-        visitor = d3d12ma_visitor;
+	output_filename = "bindings.jai";
 
         // Any extra code to include before or after the generated code.
         header = HEADER;
-        footer = FOOTER;
+        // footer = FOOTER;
     }
 
-    return generate_bindings(opts, "bindings.jai");
-}
-
-d3d12ma_visitor :: (decl: *Declaration, parent_decl: *Declaration) -> Declaration_Visit_Result {
-    if decl.name == "m_RefCount" decl.type = context.generator.type_def_u32;
-    return .RECURSE;
+    return generate_bindings(opts, output_filename);
 }
 
 // lib_visitor :: (decl: *Declaration, parent_decl: *Declaration) -> Declaration_Visit_Result {}
@@ -61,13 +57,10 @@ d3d12ma_visitor :: (decl: *Declaration, parent_decl: *Declaration) -> Declaratio
 // ];
 
 HEADER :: #string DONE
-//  ------------------
-// | d3d12ma bindings |
-//  ------------------
+//  ---------------
+// | ufbx bindings |
+//  ---------------
 DONE
 
 FOOTER :: #string DONE
-#import "Windows";
-#import "d3d12";
-#import "dxgi";
 DONE

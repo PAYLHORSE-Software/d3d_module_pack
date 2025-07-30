@@ -1,5 +1,5 @@
 //  ------------------------
-// | MATH_DXM (DIRECTXMATH) |
+// | Math_DXM (DirectXMath) |
 //  ------------------------
 
 // A hand-rolled extension for the Math module in congruence with DirectXMath.
@@ -16,11 +16,14 @@ AVX2 :: #run check_feature(CPU_INFO.feature_leaves, x86_Feature_Flag.AVX);
 #run { if AVX2 print("[Math_DXM] AVX2 supported! Using AVX2 branch with priority.\n"); }
 #run { if SSE2 print("[Math_DXM] SSE2 supported! Using SSE2 branch.\n"); }
 
-operator - :: (a: Vector4) -> Vector4 {
-    return .{-a.x, -a.y, -a.z, -a.w};
-}
-
-// TYPES ------------------------------------------------------
+XM_PI      :: cast(float) PI64;
+XM_2PI     :: cast(float) 2*PI;
+XM_1DIVPI  :: cast(float) 1/PI;
+XM_1DIV2PI :: cast(float) 1/(2*PI);
+XM_PIDIV2  :: cast(float) 0.5*PI;
+XM_PIDIV4  :: cast(float) 0.25*PI;
+XM_3PIDIV4 :: cast(float) 0.75*PI;
+XM_5PIDIV4 :: cast(float) 1.25*PI;
 
 // TODO: make use of Matrix4x3?
 XMMATRIX :: Matrix4;
@@ -48,8 +51,6 @@ XMVECTOR :: struct {
 
 // XMVECTORU32, XMVECTORI32 etc. redundant thanks to #place :)
 
-// CONSTANTS --------------------------------------------------
-
 XMVECTOR_ZERO :: XMVECTOR.{x=0, y=0, z=0, w=0};
 
 g_XMIdentityR3 :: XMVECTOR.{x=0, y=0, z=0, w=1};
@@ -60,20 +61,13 @@ XM_SELECT_1 :: 0xFFFFFFFF;
 g_XMSelect1110 : XMVECTOR : .{u[0]=XM_SELECT_1, u[1]=XM_SELECT_1, u[2]=XM_SELECT_1, u[3]=XM_SELECT_0};
 g_XMMaskY : XMVECTOR : .{u[0]=XM_SELECT_0, u[1]=XM_SELECT_1, u[2]=XM_SELECT_0, u[3]=XM_SELECT_0};
 
-XM_PI      :: cast(float) PI64;
-XM_2PI     :: cast(float) 2*PI;
-XM_1DIVPI  :: cast(float) 1/PI;
-XM_1DIV2PI :: cast(float) 1/(2*PI);
-XM_PIDIV2  :: cast(float) 0.5*PI;
-XM_PIDIV4  :: cast(float) 0.25*PI;
-XM_3PIDIV4 :: cast(float) 0.75*PI;
-XM_5PIDIV4 :: cast(float) 1.25*PI;
-
-// PROCEDURES -------------------------------------------------
-
 // _MM_SHUFFLE(z, y, x, w) :: (z << 6) | (y << 4) | (x << 2) | w
 
-print_xmmatrix :: (m: XMMATRIX) {
+operator - :: (a: Vector4) -> Vector4 {
+    return .{-a.x, -a.y, -a.z, -a.w};
+}
+
+log_xmmatrix :: (m: XMMATRIX) {
     print("%\n", row(m, 0));
     print("%\n", row(m, 1));
     print("%\n", row(m, 2));
@@ -133,7 +127,6 @@ XMVector3Transform :: (V: Vector3, M: XMMATRIX) -> Vector3 {
     // return vResult;
     // SSE2
     // SCALAR
-    
     Z : XMVECTOR = xx make_vector4(V.z);
     Y : XMVECTOR = xx make_vector4(V.y);
     X : XMVECTOR = xx make_vector4(V.x);

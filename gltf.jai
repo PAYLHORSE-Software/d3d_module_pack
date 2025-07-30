@@ -1,5 +1,5 @@
 //  ------
-// | GLTF |
+// | gltf |
 //  ------
 
 // NOTE: only supports .glb format for now

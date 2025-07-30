@@ -1,8 +1,6 @@
 //  -----
-// | DDS |
+// | dds |
 //  -----
-
-// STRUCTS ----------------------------------------------------
 
 DDS_Image :: struct {
     dwMagic  : u32;
@@ -89,9 +87,12 @@ DDS_PIXELFORMAT_FLAGS :: enum u32 {
 
 FOURCC_DX10 : u32 : 808540228;
 
-// PROCEDURES -------------------------------------------------
-
-dds_from_memory :: (data: *u8, length: u64) -> DDS_Image {
+/*
+================
+dds_from_memory
+Provide an allocator with ,, to avoid heap allocation!
+----------------
+*/dds_from_memory :: (data: *u8, length: u64) -> *DDS_Image {
 
     // Check magic for valid dds
     cursor := data;
@@ -99,10 +100,10 @@ dds_from_memory :: (data: *u8, length: u64) -> DDS_Image {
     memcpy_eat(*magic, cursor, size_of(u32));
     if magic != 0x20534444 {
 	log("[dds] Bad magic, returning null!");
-	return NULL_DDS;
+	return null;
     }
 
-    dds_image: DDS_Image;
+    dds_image := New(DDS_Image);
     memcpy_eat(*dds_image.header, cursor, size_of(DDS_HEADER));
 
     // TODO: check validity of header? might be unneccessary
@@ -121,16 +122,14 @@ dds_from_memory :: (data: *u8, length: u64) -> DDS_Image {
 
 /*
 ====================
-memcpy_eat
-
-Convenience, memcpy() then advance cursor to end of copy region.
-====================
+memcpy_eat (lamdba)
+Convenience, memcpy() then advance 'cursor' to end of copy region.
+--------------------
 */
 memcpy_eat :: (pdst: *void, psrc: *void, size: s64) #expand {
     memcpy(pdst, psrc, size);
     `cursor += size;
 }
-
 
 
 #import "Basic";

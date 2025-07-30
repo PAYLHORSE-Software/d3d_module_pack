@@ -29,16 +29,16 @@ generate_bindings :: (args: [] string) -> bool {
     {
         using opts;
 
+        array_add(*libraries, .{filename="meshoptimizer"});
         array_add(*source_files, "meshoptimizer.h");
-        array_add(*libnames, "meshoptimizer");
         array_add(*extra_clang_arguments, "-x", "c++", "-DWIN32_LEAN_AND_MEAN");
         log_unsupported = false;
-        generate_compile_time_struct_checks = false;
+        // generate_compile_time_struct_checks = false;
 	output_filename = "bindings.jai";
 
         // Any extra code to include before or after the generated code.
         header = HEADER;
-        footer = FOOTER;
+        // footer = FOOTER;
     }
 
     return generate_bindings(opts, output_filename);

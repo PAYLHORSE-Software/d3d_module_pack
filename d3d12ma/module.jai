@@ -1,10 +1,10 @@
 //  ---------
-// | D3D12MA |
+// | d3d12ma |
 //  ---------
 
-#load "dma_bindings.jai";
+#load "bindings.jai";
 
-// ---- DLL COPY TO OUTPUT -----------------
+// ---- DLL copy to output -----------------
 // This runs when compiling the final target
 // #run {
 

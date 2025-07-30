@@ -4,12 +4,11 @@
 // jai generate.jai
 //
 //  ------------------
-// | D3D12MA Bindings |
+// | d3d12ma bindings |
 //  ------------------
 
-// NOTE: hand-edited at @EDITED
 
-_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH :: 1;
+
 D3D12MA_DXGI_1_4 :: 1;
 
 D3D12MA_CREATE_NOT_ZEROED_AVAILABLE :: 1;
@@ -21,37 +20,40 @@ FACILITY_D3D12MA :: 3542;
 /// \endcond
 D3D12MA :: struct {
     IUnknownImpl :: struct {
-        #as using iunknown: IUnknown;
-
-	// @EDITED
+        vtable:                  *IUnknownImpl_VTable;
+        using iunknownimpl__raw: IUnknownImpl__RAW;
+        #place vtable; #as iunknown: IUnknown; // Support cast to IUnknown
+    }
+        // IUnknownImpl without vtable pointer. Needed to generate a C++-equivalent struct layout when "inheriting" from IUnknownImpl
+    IUnknownImpl__RAW :: struct {
+        // @Edited
         // m_RefCount: std.atomic(u32) = 1;
         m_RefCount: u32 = 1;
-        #place iunknown; iunknownimpl_vtable: *IUnknownImpl_VTable;
 
         // Virtual functions:
         // Normally you should call them via the vtable.
         // But these bindings can be useful if you need to call the parent implementation in a sub-struct’s overwritten method
         // or need to create a vtable yourself.
 
-        virtual_Destructor :: (this: *IUnknownImpl, flags: Msvc_Destructor_Flags = .NONE) -> void #cpp_method #foreign d3d12ma "??1IUnknownImpl@D3D12MA@@UEAA@XZ";
-        virtual_QueryInterface :: (this: *IUnknownImpl, riid: *IID, ppvObject: **void) -> HRESULT #cpp_method #foreign d3d12ma "?QueryInterface@IUnknownImpl@D3D12MA@@UEAAJAEBU_GUID@@PEAPEAX@Z";
-        virtual_AddRef :: (this: *IUnknownImpl) -> u32 #cpp_method #foreign d3d12ma "?AddRef@IUnknownImpl@D3D12MA@@UEAAKXZ";
-        virtual_Release :: (this: *IUnknownImpl) -> u32 #cpp_method #foreign d3d12ma "?Release@IUnknownImpl@D3D12MA@@UEAAKXZ";
+        virtual_Destructor :: (this: *D3D12MA.IUnknownImpl, flags: Msvc_Destructor_Flags = .NONE) -> void #cpp_method #foreign d3d12ma "??1IUnknownImpl@D3D12MA@@UEAA@XZ";
+        virtual_QueryInterface :: (this: *D3D12MA.IUnknownImpl, riid: *IID, ppvObject: **void) -> HRESULT #cpp_method #foreign d3d12ma "?QueryInterface@IUnknownImpl@D3D12MA@@UEAAJAEBU_GUID@@PEAPEAX@Z";
+        virtual_AddRef :: (this: *D3D12MA.IUnknownImpl) -> u32 #cpp_method #foreign d3d12ma "?AddRef@IUnknownImpl@D3D12MA@@UEAAKXZ";
+        virtual_Release :: (this: *D3D12MA.IUnknownImpl) -> u32 #cpp_method #foreign d3d12ma "?Release@IUnknownImpl@D3D12MA@@UEAAKXZ";
 
-        virtual_ReleaseThis :: (this: *IUnknownImpl) -> void #cpp_method #foreign d3d12ma "?ReleaseThis@IUnknownImpl@D3D12MA@@MEAAXXZ";
+        virtual_ReleaseThis :: (this: *D3D12MA.IUnknownImpl) -> void #cpp_method #foreign d3d12ma "?ReleaseThis@IUnknownImpl@D3D12MA@@MEAAXXZ";
     }
     IUnknownImpl_VTable :: struct #type_info_none {
-        using iunknown: IUnknown_VTable;
-        Destructor: (this: *IUnknownImpl, flags: Msvc_Destructor_Flags = .NONE) -> void #cpp_method;
+        using vtable: IUnknown_VTable;
 
-        ReleaseThis: (this: *IUnknownImpl) -> void #cpp_method;
+        Destructor:   #type (this: *D3D12MA.IUnknownImpl, flags: Msvc_Destructor_Flags = .NONE) -> void #cpp_method;
+
+        ReleaseThis:  #type (this: *D3D12MA.IUnknownImpl) -> void #cpp_method;
     }
+    IUnknownImpl_Destructor :: inline (this: *IUnknownImpl, flags: Msvc_Destructor_Flags = .NONE) { this.vtable.Destructor(this, flags); }
 
-    IUnknownImpl_Destructor :: inline (this: *IUnknownImpl, flags: Msvc_Destructor_Flags = .NONE) { this.iunknownimpl_vtable.Destructor(this, flags); }
+    IUnknownImpl_ReleaseThis :: inline (this: *IUnknownImpl) { this.vtable.ReleaseThis(this); }
 
-    IUnknownImpl_ReleaseThis :: inline (this: *IUnknownImpl) { this.iunknownimpl_vtable.ReleaseThis(this); }
-
-    vtable :: (obj: *IUnknownImpl) -> *IUnknownImpl_VTable { return obj.iunknownimpl_vtable; }
+    vtable :: (obj: *IUnknownImpl) -> *IUnknownImpl_VTable { return obj.vtable; }
 
 
     /// \cond INTERNAL
@@ -336,7 +338,13 @@ D3D12MA :: struct {
     so it calls `%Release()` on the resource when destroyed.
     */
     Allocation :: struct {
-        #as using iunknownimpl: IUnknownImpl;
+        vtable:                *IUnknownImpl_VTable;
+        using allocation__raw: Allocation__RAW;
+        #place vtable; #as iunknownimpl: IUnknownImpl; // Support cast to IUnknownImpl
+    }
+        // Allocation without vtable pointer. Needed to generate a C++-equivalent struct layout when "inheriting" from Allocation
+    Allocation__RAW :: struct {
+        using iunknownimpl__raw: IUnknownImpl__RAW;
 
         /** \brief Returns offset in bytes from the start of memory heap.
         
@@ -346,10 +354,10 @@ D3D12MA :: struct {
         
         If the Allocation represents committed resource with implicit heap, returns 0.
         */
-        GetOffset :: (this: *Allocation) -> u64 #cpp_method #foreign d3d12ma "?GetOffset@Allocation@D3D12MA@@QEBA_KXZ";
+        GetOffset :: (this: *D3D12MA.Allocation) -> u64 #cpp_method #foreign d3d12ma "?GetOffset@Allocation@D3D12MA@@QEBA_KXZ";
 
         /// Returns alignment that resource was created with.
-        GetAlignment :: (this: *Allocation) -> u64 #cpp_method #foreign d3d12ma "?GetAlignment@Allocation@D3D12MA@@QEBA_KXZ";
+        GetAlignment :: (this: *D3D12MA.Allocation) -> u64 #cpp_method #foreign d3d12ma "?GetAlignment@Allocation@D3D12MA@@QEBA_KXZ";
 
         /** \brief Returns size in bytes of the allocation.
         
@@ -359,13 +367,13 @@ D3D12MA :: struct {
         - For resources created as committed, this value may not be accurate. DirectX implementation may optimize memory usage internally
         so that you may even observe regions of `ID3D12Resource::GetGPUVirtualAddress()` + Allocation::GetSize() to overlap in memory and still work correctly.
         */
-        GetSize :: (this: *Allocation) -> u64 #cpp_method #foreign d3d12ma "?GetSize@Allocation@D3D12MA@@QEBA_KXZ";
+        GetSize :: (this: *D3D12MA.Allocation) -> u64 #cpp_method #foreign d3d12ma "?GetSize@Allocation@D3D12MA@@QEBA_KXZ";
 
         /** \brief Returns D3D12 resource associated with this object.
         
         Calling this method doesn't increment resource's reference counter.
         */
-        GetResource :: (this: *Allocation) -> *ID3D12Resource #cpp_method #foreign d3d12ma "?GetResource@Allocation@D3D12MA@@QEBAPEAUID3D12Resource@@XZ";
+        GetResource :: (this: *D3D12MA.Allocation) -> *ID3D12Resource #cpp_method #foreign d3d12ma "?GetResource@Allocation@D3D12MA@@QEBAPEAUID3D12Resource@@XZ";
 
         /** \brief Releases the resource currently pointed by the allocation (if not null), sets it to new one, incrementing its reference counter (if not null).
         
@@ -374,19 +382,19 @@ D3D12MA :: struct {
         Typically, an allocation object should reference the resource that was created together with it.
         If you swap it to another resource of different size, \subpage statistics and budgets can be calculated incorrectly.
         */
-        SetResource :: (this: *Allocation, pResource: *ID3D12Resource) -> void #cpp_method #foreign d3d12ma "?SetResource@Allocation@D3D12MA@@QEAAXPEAUID3D12Resource@@@Z";
+        SetResource :: (this: *D3D12MA.Allocation, pResource: *ID3D12Resource) -> void #cpp_method #foreign d3d12ma "?SetResource@Allocation@D3D12MA@@QEAAXPEAUID3D12Resource@@@Z";
 
         /** \brief Returns memory heap that the resource is created in.
         
         If the Allocation represents committed resource with implicit heap, returns NULL.
         */
-        GetHeap :: (this: *Allocation) -> *ID3D12Heap #cpp_method #foreign d3d12ma "?GetHeap@Allocation@D3D12MA@@QEBAPEAUID3D12Heap@@XZ";
+        GetHeap :: (this: *D3D12MA.Allocation) -> *ID3D12Heap #cpp_method #foreign d3d12ma "?GetHeap@Allocation@D3D12MA@@QEBAPEAUID3D12Heap@@XZ";
 
         /// Changes custom pointer for an allocation to a new value.
-        SetPrivateData :: (this: *Allocation, pPrivateData: *void) -> void #cpp_method #foreign d3d12ma "?SetPrivateData@Allocation@D3D12MA@@QEAAXPEAX@Z";
+        SetPrivateData :: (this: *D3D12MA.Allocation, pPrivateData: *void) -> void #cpp_method #foreign d3d12ma "?SetPrivateData@Allocation@D3D12MA@@QEAAXPEAX@Z";
 
         /// Get custom pointer associated with the allocation.
-        GetPrivateData :: (this: *Allocation) -> *void #cpp_method #foreign d3d12ma "?GetPrivateData@Allocation@D3D12MA@@QEBAPEAXXZ";
+        GetPrivateData :: (this: *D3D12MA.Allocation) -> *void #cpp_method #foreign d3d12ma "?GetPrivateData@Allocation@D3D12MA@@QEBAPEAXXZ";
 
         /** \brief Associates a name with the allocation object. This name is for use in debug diagnostics and tools.
         
@@ -395,7 +403,7 @@ D3D12MA :: struct {
         
         `Name` can be null.
         */
-        SetName :: (this: *Allocation, Name: *s16) -> void #cpp_method #foreign d3d12ma "?SetName@Allocation@D3D12MA@@QEAAXPEB_W@Z";
+        SetName :: (this: *D3D12MA.Allocation, Name: *s16) -> void #cpp_method #foreign d3d12ma "?SetName@Allocation@D3D12MA@@QEAAXPEB_W@Z";
 
         /** \brief Returns the name associated with the allocation object.
         
@@ -403,7 +411,7 @@ D3D12MA :: struct {
         
         If no name was associated with the allocation, returns null.
         */
-        GetName :: (this: *Allocation) -> *s16 #cpp_method #foreign d3d12ma "?GetName@Allocation@D3D12MA@@QEBAPEB_WXZ";
+        GetName :: (this: *D3D12MA.Allocation) -> *s16 #cpp_method #foreign d3d12ma "?GetName@Allocation@D3D12MA@@QEBAPEB_WXZ";
 
         Type :: enum s32 {
             COMMITTED :: 0;
@@ -417,12 +425,12 @@ D3D12MA :: struct {
             TYPE_COUNT     :: COUNT;
         }
 
-        m_Allocator:    *AllocatorPimpl;
-        m_Size:         u64;
-        m_Alignment:    u64;
-        m_Resource:     *ID3D12Resource;
-        m_pPrivateData: *void;
-        m_Name:         *s16;
+        m_Allocator:             *D3D12MA.AllocatorPimpl;
+        m_Size:                  u64;
+        m_Alignment:             u64;
+        m_Resource:              *ID3D12Resource;
+        m_pPrivateData:          *void;
+        m_Name:                  *s16;
 
         union {
             m_Committed: struct {
@@ -445,49 +453,41 @@ D3D12MA :: struct {
             };
         }
 
-        // PackedData :: struct {
-        //     __bitfield: [5] u8;
-        //     /* 
-        //         m_Type: u32; /* 2 bits */ // enum Type
-        //         m_ResourceDimension: u32; /* 3 bits */ // enum D3D12_RESOURCE_DIMENSION
-        //         m_ResourceFlags: u32; /* 24 bits */ // flags D3D12_RESOURCE_FLAGS
-        //         m_TextureLayout: u32; /* 9 bits */ // enum D3D12_TEXTURE_LAYOUT;
-        //     */
-        // }
-
-        // @EDITED
         PackedData :: struct {
-            m_Type:               u32; // enum Type
-            #place m_Type; /*bitfield 2*/ m_ResourceDimension:  u32; // enum D3D12_RESOURCE_DIMENSION
-            #place m_Type; /*bitfield 5*/ m_ResourceFlags:      u32; // flags D3D12_RESOURCE_FLAGS
-            m_TextureLayout:      u32; // enum D3D12_TEXTURE_LAYOUT
-            #place m_TextureLayout; /*bitfield 9*/ m_WasZeroInitialized: u32; // BOOL
-        }        
+            __bitfield: [5] u8;
+            /* 
+                m_Type: u32; /* 2 bits */ // enum Type
+                m_ResourceDimension: u32; /* 3 bits */ // enum D3D12_RESOURCE_DIMENSION
+                m_ResourceFlags: u32; /* 24 bits */ // flags D3D12_RESOURCE_FLAGS
+                m_TextureLayout: u32; /* 9 bits */ // enum D3D12_TEXTURE_LAYOUT;
+            */
+            #place __bitfield; PackedData_alignment: u32;
+        }
 
-        m_PackedData:   PackedData;
+        m_PackedData:            D3D12MA.Allocation.PackedData;
 
-        Constructor :: (this: *Allocation, allocator: *AllocatorPimpl, size: u64, alignment: u64) -> void #cpp_method #foreign d3d12ma "??0Allocation@D3D12MA@@AEAA@PEAVAllocatorPimpl@1@_K1@Z";
+        Constructor :: (this: *D3D12MA.Allocation, allocator: *D3D12MA.AllocatorPimpl, size: u64, alignment: u64) -> void #cpp_method #foreign d3d12ma "??0Allocation@D3D12MA@@AEAA@PEAVAllocatorPimpl@1@_K1@Z";
 
-        InitCommitted :: (this: *Allocation, list: *CommittedAllocationList) -> void #cpp_method #foreign d3d12ma "?InitCommitted@Allocation@D3D12MA@@AEAAXPEAVCommittedAllocationList@2@@Z";
-        InitPlaced :: (this: *Allocation, allocHandle: AllocHandle, block: *NormalBlock) -> void #cpp_method #foreign d3d12ma "?InitPlaced@Allocation@D3D12MA@@AEAAX_KPEAVNormalBlock@2@@Z";
-        InitHeap :: (this: *Allocation, list: *CommittedAllocationList, heap: *ID3D12Heap) -> void #cpp_method #foreign d3d12ma "?InitHeap@Allocation@D3D12MA@@AEAAXPEAVCommittedAllocationList@2@PEAUID3D12Heap@@@Z";
-        SwapBlockAllocation :: (this: *Allocation, allocation: *Allocation) -> void #cpp_method #foreign d3d12ma "?SwapBlockAllocation@Allocation@D3D12MA@@AEAAXPEAV12@@Z";
+        InitCommitted :: (this: *D3D12MA.Allocation, list: *D3D12MA.CommittedAllocationList) -> void #cpp_method #foreign d3d12ma "?InitCommitted@Allocation@D3D12MA@@AEAAXPEAVCommittedAllocationList@2@@Z";
+        InitPlaced :: (this: *D3D12MA.Allocation, allocHandle: D3D12MA.AllocHandle, block: *D3D12MA.NormalBlock) -> void #cpp_method #foreign d3d12ma "?InitPlaced@Allocation@D3D12MA@@AEAAX_KPEAVNormalBlock@2@@Z";
+        InitHeap :: (this: *D3D12MA.Allocation, list: *D3D12MA.CommittedAllocationList, heap: *ID3D12Heap) -> void #cpp_method #foreign d3d12ma "?InitHeap@Allocation@D3D12MA@@AEAAXPEAVCommittedAllocationList@2@PEAUID3D12Heap@@@Z";
+        SwapBlockAllocation :: (this: *D3D12MA.Allocation, allocation: *D3D12MA.Allocation) -> void #cpp_method #foreign d3d12ma "?SwapBlockAllocation@Allocation@D3D12MA@@AEAAXPEAV12@@Z";
 
         // If the Allocation represents committed resource with implicit heap, returns UINT64_MAX.
-        GetAllocHandle :: (this: *Allocation) -> AllocHandle #cpp_method #foreign d3d12ma "?GetAllocHandle@Allocation@D3D12MA@@AEBA_KXZ";
-        GetBlock :: (this: *Allocation) -> *NormalBlock #cpp_method #foreign d3d12ma "?GetBlock@Allocation@D3D12MA@@AEAAPEAVNormalBlock@2@XZ";
+        GetAllocHandle :: (this: *D3D12MA.Allocation) -> D3D12MA.AllocHandle #cpp_method #foreign d3d12ma "?GetAllocHandle@Allocation@D3D12MA@@AEBA_KXZ";
+        GetBlock :: (this: *D3D12MA.Allocation) -> *D3D12MA.NormalBlock #cpp_method #foreign d3d12ma "?GetBlock@Allocation@D3D12MA@@AEAAPEAVNormalBlock@2@XZ";
 
-        FreeName :: (this: *Allocation) -> void #cpp_method #foreign d3d12ma "?FreeName@Allocation@D3D12MA@@AEAAXXZ";
+        FreeName :: (this: *D3D12MA.Allocation) -> void #cpp_method #foreign d3d12ma "?FreeName@Allocation@D3D12MA@@AEAAXXZ";
 
         // Virtual functions:
         // Normally you should call them via the vtable.
         // But these bindings can be useful if you need to call the parent implementation in a sub-struct’s overwritten method
         // or need to create a vtable yourself.
 
-        virtual_ReleaseThis :: (this: *Allocation) -> void #cpp_method #foreign d3d12ma "?ReleaseThis@Allocation@D3D12MA@@MEAAXXZ";
+        virtual_ReleaseThis :: (this: *D3D12MA.Allocation) -> void #cpp_method #foreign d3d12ma "?ReleaseThis@Allocation@D3D12MA@@MEAAXXZ";
 
         //  Nothing here, everything already done in Release.
-        virtual_Destructor :: (this: *Allocation, flags: Msvc_Destructor_Flags = .NONE) -> void #cpp_method #foreign d3d12ma "??1Allocation@D3D12MA@@EEAA@XZ";
+        virtual_Destructor :: (this: *D3D12MA.Allocation, flags: Msvc_Destructor_Flags = .NONE) -> void #cpp_method #foreign d3d12ma "??1Allocation@D3D12MA@@EEAA@XZ";
     }
 
     /// Flags to be passed as DEFRAGMENTATION_DESC::Flags.
@@ -618,7 +618,13 @@ D3D12MA :: struct {
     Pool::BeginDefragmentation (for a custom pool).
     */
     DefragmentationContext :: struct {
-        #as using iunknownimpl: IUnknownImpl;
+        vtable:                            *IUnknownImpl_VTable;
+        using defragmentationcontext__raw: DefragmentationContext__RAW;
+        #place vtable; #as iunknownimpl: IUnknownImpl; // Support cast to IUnknownImpl
+    }
+        // DefragmentationContext without vtable pointer. Needed to generate a C++-equivalent struct layout when "inheriting" from DefragmentationContext
+    DefragmentationContext__RAW :: struct {
+        using iunknownimpl__raw: IUnknownImpl__RAW;
 
         /** \brief Starts single defragmentation pass.
         
@@ -628,7 +634,7 @@ D3D12MA :: struct {
         - `S_FALSE` if there are pending moves returned in `pPassInfo`. You need to perform them, call DefragmentationContext::EndPass(),
         and then preferably try another pass with DefragmentationContext::BeginPass().
         */
-        BeginPass :: (this: *DefragmentationContext, pPassInfo: *DEFRAGMENTATION_PASS_MOVE_INFO) -> HRESULT #cpp_method #foreign d3d12ma "?BeginPass@DefragmentationContext@D3D12MA@@QEAAJPEAUDEFRAGMENTATION_PASS_MOVE_INFO@2@@Z";
+        BeginPass :: (this: *D3D12MA.DefragmentationContext, pPassInfo: *D3D12MA.DEFRAGMENTATION_PASS_MOVE_INFO) -> HRESULT #cpp_method #foreign d3d12ma "?BeginPass@DefragmentationContext@D3D12MA@@QEAAJPEAUDEFRAGMENTATION_PASS_MOVE_INFO@2@@Z";
 
         /** \brief Ends single defragmentation pass.
         
@@ -645,16 +651,16 @@ D3D12MA :: struct {
         
         If no more moves are possible you can end whole defragmentation.
         */
-        EndPass :: (this: *DefragmentationContext, pPassInfo: *DEFRAGMENTATION_PASS_MOVE_INFO) -> HRESULT #cpp_method #foreign d3d12ma "?EndPass@DefragmentationContext@D3D12MA@@QEAAJPEAUDEFRAGMENTATION_PASS_MOVE_INFO@2@@Z";
+        EndPass :: (this: *D3D12MA.DefragmentationContext, pPassInfo: *D3D12MA.DEFRAGMENTATION_PASS_MOVE_INFO) -> HRESULT #cpp_method #foreign d3d12ma "?EndPass@DefragmentationContext@D3D12MA@@QEAAJPEAUDEFRAGMENTATION_PASS_MOVE_INFO@2@@Z";
 
         /** \brief Returns statistics of the defragmentation performed so far.
         */
-        GetStats :: (this: *DefragmentationContext, pStats: *DEFRAGMENTATION_STATS) -> void #cpp_method #foreign d3d12ma "?GetStats@DefragmentationContext@D3D12MA@@QEAAXPEAUDEFRAGMENTATION_STATS@2@@Z";
+        GetStats :: (this: *D3D12MA.DefragmentationContext, pStats: *D3D12MA.DEFRAGMENTATION_STATS) -> void #cpp_method #foreign d3d12ma "?GetStats@DefragmentationContext@D3D12MA@@QEAAXPEAUDEFRAGMENTATION_STATS@2@@Z";
 
-        m_Pimpl: *DefragmentationContextPimpl;
+        m_Pimpl:                 *D3D12MA.DefragmentationContextPimpl;
 
-        Constructor :: (this: *DefragmentationContext, allocator: *AllocatorPimpl, desc: *DEFRAGMENTATION_DESC, poolVector: *BlockVector) -> void #cpp_method #foreign d3d12ma "??0DefragmentationContext@D3D12MA@@AEAA@PEAVAllocatorPimpl@1@AEBUDEFRAGMENTATION_DESC@1@PEAVBlockVector@1@@Z";
-        Constructor :: (this: *DefragmentationContext, allocator: *AllocatorPimpl, desc: DEFRAGMENTATION_DESC, poolVector: *BlockVector) #no_context {
+        Constructor :: (this: *D3D12MA.DefragmentationContext, allocator: *D3D12MA.AllocatorPimpl, desc: *D3D12MA.DEFRAGMENTATION_DESC, poolVector: *D3D12MA.BlockVector) -> void #cpp_method #foreign d3d12ma "??0DefragmentationContext@D3D12MA@@AEAA@PEAVAllocatorPimpl@1@AEBUDEFRAGMENTATION_DESC@1@PEAVBlockVector@1@@Z";
+        Constructor :: (this: *D3D12MA.DefragmentationContext, allocator: *D3D12MA.AllocatorPimpl, desc: D3D12MA.DEFRAGMENTATION_DESC, poolVector: *D3D12MA.BlockVector) #no_context {
             Constructor(this, allocator, *desc, poolVector);
         }
 
@@ -663,9 +669,9 @@ D3D12MA :: struct {
         // But these bindings can be useful if you need to call the parent implementation in a sub-struct’s overwritten method
         // or need to create a vtable yourself.
 
-        virtual_ReleaseThis :: (this: *DefragmentationContext) -> void #cpp_method #foreign d3d12ma "?ReleaseThis@DefragmentationContext@D3D12MA@@MEAAXXZ";
+        virtual_ReleaseThis :: (this: *D3D12MA.DefragmentationContext) -> void #cpp_method #foreign d3d12ma "?ReleaseThis@DefragmentationContext@D3D12MA@@MEAAXXZ";
 
-        virtual_Destructor :: (this: *DefragmentationContext, flags: Msvc_Destructor_Flags = .NONE) -> void #cpp_method #foreign d3d12ma "??1DefragmentationContext@D3D12MA@@EEAA@XZ";
+        virtual_Destructor :: (this: *D3D12MA.DefragmentationContext, flags: Msvc_Destructor_Flags = .NONE) -> void #cpp_method #foreign d3d12ma "??1DefragmentationContext@D3D12MA@@EEAA@XZ";
     }
 
     /// \brief Bit flags to be used with POOL_DESC::Flags.
@@ -782,25 +788,31 @@ D3D12MA :: struct {
 
     /// \endcond
     Pool :: struct {
-        #as using iunknownimpl: IUnknownImpl;
+        vtable:          *IUnknownImpl_VTable;
+        using pool__raw: Pool__RAW;
+        #place vtable; #as iunknownimpl: IUnknownImpl; // Support cast to IUnknownImpl
+    }
+        // Pool without vtable pointer. Needed to generate a C++-equivalent struct layout when "inheriting" from Pool
+    Pool__RAW :: struct {
+        using iunknownimpl__raw: IUnknownImpl__RAW;
 
         /** \brief Returns copy of parameters of the pool.
         
         These are the same parameters as passed to D3D12MA::Allocator::CreatePool.
         */
-        GetDesc :: (this: *Pool) -> POOL_DESC #cpp_method #foreign d3d12ma "?GetDesc@Pool@D3D12MA@@QEBA?AUPOOL_DESC@2@XZ";
+        GetDesc :: (this: *D3D12MA.Pool) -> D3D12MA.POOL_DESC #cpp_method #foreign d3d12ma "?GetDesc@Pool@D3D12MA@@QEBA?AUPOOL_DESC@2@XZ";
 
         /** \brief Retrieves basic statistics of the custom pool that are fast to calculate.
         
         \param[out] pStats %Statistics of the current pool.
         */
-        GetStatistics :: (this: *Pool, pStats: *Statistics) -> void #cpp_method #foreign d3d12ma "?GetStatistics@Pool@D3D12MA@@QEAAXPEAUStatistics@2@@Z";
+        GetStatistics :: (this: *D3D12MA.Pool, pStats: *D3D12MA.Statistics) -> void #cpp_method #foreign d3d12ma "?GetStatistics@Pool@D3D12MA@@QEAAXPEAUStatistics@2@@Z";
 
         /** \brief Retrieves detailed statistics of the custom pool that are slower to calculate.
         
         \param[out] pStats %Statistics of the current pool.
         */
-        CalculateStatistics :: (this: *Pool, pStats: *DetailedStatistics) -> void #cpp_method #foreign d3d12ma "?CalculateStatistics@Pool@D3D12MA@@QEAAXPEAUDetailedStatistics@2@@Z";
+        CalculateStatistics :: (this: *D3D12MA.Pool, pStats: *D3D12MA.DetailedStatistics) -> void #cpp_method #foreign d3d12ma "?CalculateStatistics@Pool@D3D12MA@@QEAAXPEAUDetailedStatistics@2@@Z";
 
         /** \brief Associates a name with the pool. This name is for use in debug diagnostics and tools.
         
@@ -809,7 +821,7 @@ D3D12MA :: struct {
         
         `Name` can be NULL.
         */
-        SetName :: (this: *Pool, Name: *s16) -> void #cpp_method #foreign d3d12ma "?SetName@Pool@D3D12MA@@QEAAXPEB_W@Z";
+        SetName :: (this: *D3D12MA.Pool, Name: *s16) -> void #cpp_method #foreign d3d12ma "?SetName@Pool@D3D12MA@@QEAAXPEB_W@Z";
 
         /** \brief Returns the name associated with the pool object.
         
@@ -817,7 +829,7 @@ D3D12MA :: struct {
         
         If no name was associated with the allocation, returns NULL.
         */
-        GetName :: (this: *Pool) -> *s16 #cpp_method #foreign d3d12ma "?GetName@Pool@D3D12MA@@QEBAPEB_WXZ";
+        GetName :: (this: *D3D12MA.Pool) -> *s16 #cpp_method #foreign d3d12ma "?GetName@Pool@D3D12MA@@QEBAPEB_WXZ";
 
         /** \brief Begins defragmentation process of the current pool.
         
@@ -830,12 +842,12 @@ D3D12MA :: struct {
         For more information about defragmentation, see documentation chapter:
         [Defragmentation](@ref defragmentation).
         */
-        BeginDefragmentation :: (this: *Pool, pDesc: *DEFRAGMENTATION_DESC, ppContext: **DefragmentationContext) -> HRESULT #cpp_method #foreign d3d12ma "?BeginDefragmentation@Pool@D3D12MA@@QEAAJPEBUDEFRAGMENTATION_DESC@2@PEAPEAVDefragmentationContext@2@@Z";
+        BeginDefragmentation :: (this: *D3D12MA.Pool, pDesc: *D3D12MA.DEFRAGMENTATION_DESC, ppContext: **D3D12MA.DefragmentationContext) -> HRESULT #cpp_method #foreign d3d12ma "?BeginDefragmentation@Pool@D3D12MA@@QEAAJPEBUDEFRAGMENTATION_DESC@2@PEAPEAVDefragmentationContext@2@@Z";
 
-        m_Pimpl: *PoolPimpl;
+        m_Pimpl:                 *D3D12MA.PoolPimpl;
 
-        Constructor :: (this: *Pool, allocator: *Allocator, desc: *POOL_DESC) -> void #cpp_method #foreign d3d12ma "??0Pool@D3D12MA@@AEAA@PEAVAllocator@1@AEBUPOOL_DESC@1@@Z";
-        Constructor :: (this: *Pool, allocator: *Allocator, desc: POOL_DESC) #no_context {
+        Constructor :: (this: *D3D12MA.Pool, allocator: *D3D12MA.Allocator, desc: *D3D12MA.POOL_DESC) -> void #cpp_method #foreign d3d12ma "??0Pool@D3D12MA@@AEAA@PEAVAllocator@1@AEBUPOOL_DESC@1@@Z";
+        Constructor :: (this: *D3D12MA.Pool, allocator: *D3D12MA.Allocator, desc: D3D12MA.POOL_DESC) #no_context {
             Constructor(this, allocator, *desc);
         }
 
@@ -844,9 +856,9 @@ D3D12MA :: struct {
         // But these bindings can be useful if you need to call the parent implementation in a sub-struct’s overwritten method
         // or need to create a vtable yourself.
 
-        virtual_ReleaseThis :: (this: *Pool) -> void #cpp_method #foreign d3d12ma "?ReleaseThis@Pool@D3D12MA@@MEAAXXZ";
+        virtual_ReleaseThis :: (this: *D3D12MA.Pool) -> void #cpp_method #foreign d3d12ma "?ReleaseThis@Pool@D3D12MA@@MEAAXXZ";
 
-        virtual_Destructor :: (this: *Pool, flags: Msvc_Destructor_Flags = .NONE) -> void #cpp_method #foreign d3d12ma "??1Pool@D3D12MA@@EEAA@XZ";
+        virtual_Destructor :: (this: *D3D12MA.Pool, flags: Msvc_Destructor_Flags = .NONE) -> void #cpp_method #foreign d3d12ma "??1Pool@D3D12MA@@EEAA@XZ";
     }
 
     /// \brief Bit flags to be used with ALLOCATOR_DESC::Flags.
@@ -919,10 +931,16 @@ D3D12MA :: struct {
     right after Direct3D 12 is initialized and keep it alive until before Direct3D device is destroyed.
     */
     Allocator :: struct {
-        #as using iunknownimpl: IUnknownImpl;
+        vtable:               *IUnknownImpl_VTable;
+        using allocator__raw: Allocator__RAW;
+        #place vtable; #as iunknownimpl: IUnknownImpl; // Support cast to IUnknownImpl
+    }
+        // Allocator without vtable pointer. Needed to generate a C++-equivalent struct layout when "inheriting" from Allocator
+    Allocator__RAW :: struct {
+        using iunknownimpl__raw: IUnknownImpl__RAW;
 
         /// Returns cached options retrieved from D3D12 device.
-        GetD3D12Options :: (this: *Allocator) -> *D3D12_FEATURE_DATA_D3D12_OPTIONS #cpp_method #foreign d3d12ma "?GetD3D12Options@Allocator@D3D12MA@@QEBAAEBUD3D12_FEATURE_DATA_D3D12_OPTIONS@@XZ";
+        GetD3D12Options :: (this: *D3D12MA.Allocator) -> *D3D12_FEATURE_DATA_D3D12_OPTIONS #cpp_method #foreign d3d12ma "?GetD3D12Options@Allocator@D3D12MA@@QEBAAEBUD3D12_FEATURE_DATA_D3D12_OPTIONS@@XZ";
 
         /** \brief Returns true if `D3D12_FEATURE_DATA_ARCHITECTURE1::UMA` was found to be true.
         
@@ -932,7 +950,7 @@ D3D12MA :: struct {
         - "D3D12_FEATURE_DATA_ARCHITECTURE structure (d3d12.h)"
         - "ID3D12Device::GetCustomHeapProperties method (d3d12.h)"
         */
-        IsUMA :: (this: *Allocator) -> BOOL #cpp_method #foreign d3d12ma "?IsUMA@Allocator@D3D12MA@@QEBAHXZ";
+        IsUMA :: (this: *D3D12MA.Allocator) -> BOOL #cpp_method #foreign d3d12ma "?IsUMA@Allocator@D3D12MA@@QEBAHXZ";
 
         /** \brief Returns true if `D3D12_FEATURE_DATA_ARCHITECTURE1::CacheCoherentUMA` was found to be true.
         
@@ -942,7 +960,7 @@ D3D12MA :: struct {
         - "D3D12_FEATURE_DATA_ARCHITECTURE structure (d3d12.h)"
         - "ID3D12Device::GetCustomHeapProperties method (d3d12.h)"
         */
-        IsCacheCoherentUMA :: (this: *Allocator) -> BOOL #cpp_method #foreign d3d12ma "?IsCacheCoherentUMA@Allocator@D3D12MA@@QEBAHXZ";
+        IsCacheCoherentUMA :: (this: *D3D12MA.Allocator) -> BOOL #cpp_method #foreign d3d12ma "?IsCacheCoherentUMA@Allocator@D3D12MA@@QEBAHXZ";
 
         /** \brief Returns true if GPU Upload Heaps are supported on the current system.
         
@@ -950,7 +968,7 @@ D3D12MA :: struct {
         
         This flag is fetched from `D3D12_FEATURE_D3D12_OPTIONS16::GPUUploadHeapSupported`.
         */
-        IsGPUUploadHeapSupported :: (this: *Allocator) -> BOOL #cpp_method #foreign d3d12ma "?IsGPUUploadHeapSupported@Allocator@D3D12MA@@QEBAHXZ";
+        IsGPUUploadHeapSupported :: (this: *D3D12MA.Allocator) -> BOOL #cpp_method #foreign d3d12ma "?IsGPUUploadHeapSupported@Allocator@D3D12MA@@QEBAHXZ";
 
         /** \brief Returns total amount of memory of specific segment group, in bytes.
         
@@ -968,7 +986,7 @@ D3D12MA :: struct {
         All memory is considered "local".
         - `GetMemoryCapacity(DXGI_MEMORY_SEGMENT_GROUP_NON_LOCAL)` is not applicable and returns 0.
         */
-        GetMemoryCapacity :: (this: *Allocator, memorySegmentGroup: u32) -> u64 #cpp_method #foreign d3d12ma "?GetMemoryCapacity@Allocator@D3D12MA@@QEBA_KI@Z";
+        GetMemoryCapacity :: (this: *D3D12MA.Allocator, memorySegmentGroup: u32) -> u64 #cpp_method #foreign d3d12ma "?GetMemoryCapacity@Allocator@D3D12MA@@QEBA_KI@Z";
 
         /** \brief Allocates memory and creates a D3D12 resource (buffer or texture). This is the main allocation function.
         
@@ -998,8 +1016,8 @@ D3D12MA :: struct {
         although recommended as a good practice, is out of scope of this library and could be implemented
         by the user as a higher-level logic on top of it, e.g. using the \ref virtual_allocator feature.
         */
-        CreateResource :: (this: *Allocator, pAllocDesc: *ALLOCATION_DESC, pResourceDesc: *D3D12_RESOURCE_DESC, InitialResourceState: D3D12_RESOURCE_STATES, pOptimizedClearValue: *D3D12_CLEAR_VALUE, ppAllocation: **Allocation, riidResource: *IID, ppvResource: **void) -> HRESULT #cpp_method #foreign d3d12ma "?CreateResource@Allocator@D3D12MA@@QEAAJPEBUALLOCATION_DESC@2@PEBUD3D12_RESOURCE_DESC@@W4D3D12_RESOURCE_STATES@@PEBUD3D12_CLEAR_VALUE@@PEAPEAVAllocation@2@AEBU_GUID@@PEAPEAX@Z";
-        CreateResource :: (this: *Allocator, pAllocDesc: *ALLOCATION_DESC, pResourceDesc: *D3D12_RESOURCE_DESC, InitialResourceState: D3D12_RESOURCE_STATES, pOptimizedClearValue: *D3D12_CLEAR_VALUE, ppAllocation: **Allocation, riidResource: IID, ppvResource: **void) -> HRESULT #no_context {
+        CreateResource :: (this: *D3D12MA.Allocator, pAllocDesc: *D3D12MA.ALLOCATION_DESC, pResourceDesc: *D3D12_RESOURCE_DESC, InitialResourceState: D3D12_RESOURCE_STATES, pOptimizedClearValue: *D3D12_CLEAR_VALUE, ppAllocation: **D3D12MA.Allocation, riidResource: *IID, ppvResource: **void) -> HRESULT #cpp_method #foreign d3d12ma "?CreateResource@Allocator@D3D12MA@@QEAAJPEBUALLOCATION_DESC@2@PEBUD3D12_RESOURCE_DESC@@W4D3D12_RESOURCE_STATES@@PEBUD3D12_CLEAR_VALUE@@PEAPEAVAllocation@2@AEBU_GUID@@PEAPEAX@Z";
+        CreateResource :: (this: *D3D12MA.Allocator, pAllocDesc: *D3D12MA.ALLOCATION_DESC, pResourceDesc: *D3D12_RESOURCE_DESC, InitialResourceState: D3D12_RESOURCE_STATES, pOptimizedClearValue: *D3D12_CLEAR_VALUE, ppAllocation: **D3D12MA.Allocation, riidResource: IID, ppvResource: **void) -> HRESULT #no_context {
             return CreateResource(this, pAllocDesc, pResourceDesc, InitialResourceState, pOptimizedClearValue, ppAllocation, *riidResource, ppvResource);
         }
 
@@ -1009,8 +1027,8 @@ D3D12MA :: struct {
         
         To work correctly, `ID3D12Device8` interface must be available in the current system. Otherwise, `E_NOINTERFACE` is returned.
         */
-        CreateResource2 :: (this: *Allocator, pAllocDesc: *ALLOCATION_DESC, pResourceDesc: *D3D12_RESOURCE_DESC1, InitialResourceState: D3D12_RESOURCE_STATES, pOptimizedClearValue: *D3D12_CLEAR_VALUE, ppAllocation: **Allocation, riidResource: *IID, ppvResource: **void) -> HRESULT #cpp_method #foreign d3d12ma "?CreateResource2@Allocator@D3D12MA@@QEAAJPEBUALLOCATION_DESC@2@PEBUD3D12_RESOURCE_DESC1@@W4D3D12_RESOURCE_STATES@@PEBUD3D12_CLEAR_VALUE@@PEAPEAVAllocation@2@AEBU_GUID@@PEAPEAX@Z";
-        CreateResource2 :: (this: *Allocator, pAllocDesc: *ALLOCATION_DESC, pResourceDesc: *D3D12_RESOURCE_DESC1, InitialResourceState: D3D12_RESOURCE_STATES, pOptimizedClearValue: *D3D12_CLEAR_VALUE, ppAllocation: **Allocation, riidResource: IID, ppvResource: **void) -> HRESULT #no_context {
+        CreateResource2 :: (this: *D3D12MA.Allocator, pAllocDesc: *D3D12MA.ALLOCATION_DESC, pResourceDesc: *D3D12_RESOURCE_DESC1, InitialResourceState: D3D12_RESOURCE_STATES, pOptimizedClearValue: *D3D12_CLEAR_VALUE, ppAllocation: **D3D12MA.Allocation, riidResource: *IID, ppvResource: **void) -> HRESULT #cpp_method #foreign d3d12ma "?CreateResource2@Allocator@D3D12MA@@QEAAJPEBUALLOCATION_DESC@2@PEBUD3D12_RESOURCE_DESC1@@W4D3D12_RESOURCE_STATES@@PEBUD3D12_CLEAR_VALUE@@PEAPEAVAllocation@2@AEBU_GUID@@PEAPEAX@Z";
+        CreateResource2 :: (this: *D3D12MA.Allocator, pAllocDesc: *D3D12MA.ALLOCATION_DESC, pResourceDesc: *D3D12_RESOURCE_DESC1, InitialResourceState: D3D12_RESOURCE_STATES, pOptimizedClearValue: *D3D12_CLEAR_VALUE, ppAllocation: **D3D12MA.Allocation, riidResource: IID, ppvResource: **void) -> HRESULT #no_context {
             return CreateResource2(this, pAllocDesc, pResourceDesc, InitialResourceState, pOptimizedClearValue, ppAllocation, *riidResource, ppvResource);
         }
 
@@ -1021,8 +1039,8 @@ D3D12MA :: struct {
         
         To work correctly, `ID3D12Device10` interface must be available in the current system. Otherwise, `E_NOINTERFACE` is returned.
         */
-        CreateResource3 :: (this: *Allocator, pAllocDesc: *ALLOCATION_DESC, pResourceDesc: *D3D12_RESOURCE_DESC1, InitialLayout: D3D12_BARRIER_LAYOUT, pOptimizedClearValue: *D3D12_CLEAR_VALUE, NumCastableFormats: u32, pCastableFormats: *DXGI_FORMAT, ppAllocation: **Allocation, riidResource: *IID, ppvResource: **void) -> HRESULT #cpp_method #foreign d3d12ma "?CreateResource3@Allocator@D3D12MA@@QEAAJPEBUALLOCATION_DESC@2@PEBUD3D12_RESOURCE_DESC1@@W4D3D12_BARRIER_LAYOUT@@PEBUD3D12_CLEAR_VALUE@@IPEAW4DXGI_FORMAT@@PEAPEAVAllocation@2@AEBU_GUID@@PEAPEAX@Z";
-        CreateResource3 :: (this: *Allocator, pAllocDesc: *ALLOCATION_DESC, pResourceDesc: *D3D12_RESOURCE_DESC1, InitialLayout: D3D12_BARRIER_LAYOUT, pOptimizedClearValue: *D3D12_CLEAR_VALUE, NumCastableFormats: u32, pCastableFormats: *DXGI_FORMAT, ppAllocation: **Allocation, riidResource: IID, ppvResource: **void) -> HRESULT #no_context {
+        CreateResource3 :: (this: *D3D12MA.Allocator, pAllocDesc: *D3D12MA.ALLOCATION_DESC, pResourceDesc: *D3D12_RESOURCE_DESC1, InitialLayout: D3D12_BARRIER_LAYOUT, pOptimizedClearValue: *D3D12_CLEAR_VALUE, NumCastableFormats: u32, pCastableFormats: *DXGI_FORMAT, ppAllocation: **D3D12MA.Allocation, riidResource: *IID, ppvResource: **void) -> HRESULT #cpp_method #foreign d3d12ma "?CreateResource3@Allocator@D3D12MA@@QEAAJPEBUALLOCATION_DESC@2@PEBUD3D12_RESOURCE_DESC1@@W4D3D12_BARRIER_LAYOUT@@PEBUD3D12_CLEAR_VALUE@@IPEAW4DXGI_FORMAT@@PEAPEAVAllocation@2@AEBU_GUID@@PEAPEAX@Z";
+        CreateResource3 :: (this: *D3D12MA.Allocator, pAllocDesc: *D3D12MA.ALLOCATION_DESC, pResourceDesc: *D3D12_RESOURCE_DESC1, InitialLayout: D3D12_BARRIER_LAYOUT, pOptimizedClearValue: *D3D12_CLEAR_VALUE, NumCastableFormats: u32, pCastableFormats: *DXGI_FORMAT, ppAllocation: **D3D12MA.Allocation, riidResource: IID, ppvResource: **void) -> HRESULT #no_context {
             return CreateResource3(this, pAllocDesc, pResourceDesc, InitialLayout, pOptimizedClearValue, NumCastableFormats, pCastableFormats, ppAllocation, *riidResource, ppvResource);
         }
 
@@ -1045,7 +1063,7 @@ D3D12MA :: struct {
         If you use D3D12MA::ALLOCATION_FLAG_COMMITTED you will get a separate memory block -
         a heap that always has offset 0.
         */
-        AllocateMemory :: (this: *Allocator, pAllocDesc: *ALLOCATION_DESC, pAllocInfo: *D3D12_RESOURCE_ALLOCATION_INFO, ppAllocation: **Allocation) -> HRESULT #cpp_method #foreign d3d12ma "?AllocateMemory@Allocator@D3D12MA@@QEAAJPEBUALLOCATION_DESC@2@PEBUD3D12_RESOURCE_ALLOCATION_INFO@@PEAPEAVAllocation@2@@Z";
+        AllocateMemory :: (this: *D3D12MA.Allocator, pAllocDesc: *D3D12MA.ALLOCATION_DESC, pAllocInfo: *D3D12_RESOURCE_ALLOCATION_INFO, ppAllocation: **D3D12MA.Allocation) -> HRESULT #cpp_method #foreign d3d12ma "?AllocateMemory@Allocator@D3D12MA@@QEAAJPEBUALLOCATION_DESC@2@PEBUD3D12_RESOURCE_ALLOCATION_INFO@@PEAPEAVAllocation@2@@Z";
 
         /** \brief Creates a new resource in place of an existing allocation. This is useful for memory aliasing.
         
@@ -1069,8 +1087,8 @@ D3D12MA :: struct {
         considering `pAllocation->GetOffset() + AllocationLocalOffset`, the function
         returns `E_INVALIDARG`.
         */
-        CreateAliasingResource :: (this: *Allocator, pAllocation: *Allocation, AllocationLocalOffset: u64, pResourceDesc: *D3D12_RESOURCE_DESC, InitialResourceState: D3D12_RESOURCE_STATES, pOptimizedClearValue: *D3D12_CLEAR_VALUE, riidResource: *IID, ppvResource: **void) -> HRESULT #cpp_method #foreign d3d12ma "?CreateAliasingResource@Allocator@D3D12MA@@QEAAJPEAVAllocation@2@_KPEBUD3D12_RESOURCE_DESC@@W4D3D12_RESOURCE_STATES@@PEBUD3D12_CLEAR_VALUE@@AEBU_GUID@@PEAPEAX@Z";
-        CreateAliasingResource :: (this: *Allocator, pAllocation: *Allocation, AllocationLocalOffset: u64, pResourceDesc: *D3D12_RESOURCE_DESC, InitialResourceState: D3D12_RESOURCE_STATES, pOptimizedClearValue: *D3D12_CLEAR_VALUE, riidResource: IID, ppvResource: **void) -> HRESULT #no_context {
+        CreateAliasingResource :: (this: *D3D12MA.Allocator, pAllocation: *D3D12MA.Allocation, AllocationLocalOffset: u64, pResourceDesc: *D3D12_RESOURCE_DESC, InitialResourceState: D3D12_RESOURCE_STATES, pOptimizedClearValue: *D3D12_CLEAR_VALUE, riidResource: *IID, ppvResource: **void) -> HRESULT #cpp_method #foreign d3d12ma "?CreateAliasingResource@Allocator@D3D12MA@@QEAAJPEAVAllocation@2@_KPEBUD3D12_RESOURCE_DESC@@W4D3D12_RESOURCE_STATES@@PEBUD3D12_CLEAR_VALUE@@AEBU_GUID@@PEAPEAX@Z";
+        CreateAliasingResource :: (this: *D3D12MA.Allocator, pAllocation: *D3D12MA.Allocation, AllocationLocalOffset: u64, pResourceDesc: *D3D12_RESOURCE_DESC, InitialResourceState: D3D12_RESOURCE_STATES, pOptimizedClearValue: *D3D12_CLEAR_VALUE, riidResource: IID, ppvResource: **void) -> HRESULT #no_context {
             return CreateAliasingResource(this, pAllocation, AllocationLocalOffset, pResourceDesc, InitialResourceState, pOptimizedClearValue, *riidResource, ppvResource);
         }
 
@@ -1080,8 +1098,8 @@ D3D12MA :: struct {
         
         To work correctly, `ID3D12Device8` interface must be available in the current system. Otherwise, `E_NOINTERFACE` is returned.
         */
-        CreateAliasingResource1 :: (this: *Allocator, pAllocation: *Allocation, AllocationLocalOffset: u64, pResourceDesc: *D3D12_RESOURCE_DESC1, InitialResourceState: D3D12_RESOURCE_STATES, pOptimizedClearValue: *D3D12_CLEAR_VALUE, riidResource: *IID, ppvResource: **void) -> HRESULT #cpp_method #foreign d3d12ma "?CreateAliasingResource1@Allocator@D3D12MA@@QEAAJPEAVAllocation@2@_KPEBUD3D12_RESOURCE_DESC1@@W4D3D12_RESOURCE_STATES@@PEBUD3D12_CLEAR_VALUE@@AEBU_GUID@@PEAPEAX@Z";
-        CreateAliasingResource1 :: (this: *Allocator, pAllocation: *Allocation, AllocationLocalOffset: u64, pResourceDesc: *D3D12_RESOURCE_DESC1, InitialResourceState: D3D12_RESOURCE_STATES, pOptimizedClearValue: *D3D12_CLEAR_VALUE, riidResource: IID, ppvResource: **void) -> HRESULT #no_context {
+        CreateAliasingResource1 :: (this: *D3D12MA.Allocator, pAllocation: *D3D12MA.Allocation, AllocationLocalOffset: u64, pResourceDesc: *D3D12_RESOURCE_DESC1, InitialResourceState: D3D12_RESOURCE_STATES, pOptimizedClearValue: *D3D12_CLEAR_VALUE, riidResource: *IID, ppvResource: **void) -> HRESULT #cpp_method #foreign d3d12ma "?CreateAliasingResource1@Allocator@D3D12MA@@QEAAJPEAVAllocation@2@_KPEBUD3D12_RESOURCE_DESC1@@W4D3D12_RESOURCE_STATES@@PEBUD3D12_CLEAR_VALUE@@AEBU_GUID@@PEAPEAX@Z";
+        CreateAliasingResource1 :: (this: *D3D12MA.Allocator, pAllocation: *D3D12MA.Allocation, AllocationLocalOffset: u64, pResourceDesc: *D3D12_RESOURCE_DESC1, InitialResourceState: D3D12_RESOURCE_STATES, pOptimizedClearValue: *D3D12_CLEAR_VALUE, riidResource: IID, ppvResource: **void) -> HRESULT #no_context {
             return CreateAliasingResource1(this, pAllocation, AllocationLocalOffset, pResourceDesc, InitialResourceState, pOptimizedClearValue, *riidResource, ppvResource);
         }
 
@@ -1092,20 +1110,20 @@ D3D12MA :: struct {
         
         To work correctly, `ID3D12Device10` interface must be available in the current system. Otherwise, `E_NOINTERFACE` is returned.
         */
-        CreateAliasingResource2 :: (this: *Allocator, pAllocation: *Allocation, AllocationLocalOffset: u64, pResourceDesc: *D3D12_RESOURCE_DESC1, InitialLayout: D3D12_BARRIER_LAYOUT, pOptimizedClearValue: *D3D12_CLEAR_VALUE, NumCastableFormats: u32, pCastableFormats: *DXGI_FORMAT, riidResource: *IID, ppvResource: **void) -> HRESULT #cpp_method #foreign d3d12ma "?CreateAliasingResource2@Allocator@D3D12MA@@QEAAJPEAVAllocation@2@_KPEBUD3D12_RESOURCE_DESC1@@W4D3D12_BARRIER_LAYOUT@@PEBUD3D12_CLEAR_VALUE@@IPEAW4DXGI_FORMAT@@AEBU_GUID@@PEAPEAX@Z";
-        CreateAliasingResource2 :: (this: *Allocator, pAllocation: *Allocation, AllocationLocalOffset: u64, pResourceDesc: *D3D12_RESOURCE_DESC1, InitialLayout: D3D12_BARRIER_LAYOUT, pOptimizedClearValue: *D3D12_CLEAR_VALUE, NumCastableFormats: u32, pCastableFormats: *DXGI_FORMAT, riidResource: IID, ppvResource: **void) -> HRESULT #no_context {
+        CreateAliasingResource2 :: (this: *D3D12MA.Allocator, pAllocation: *D3D12MA.Allocation, AllocationLocalOffset: u64, pResourceDesc: *D3D12_RESOURCE_DESC1, InitialLayout: D3D12_BARRIER_LAYOUT, pOptimizedClearValue: *D3D12_CLEAR_VALUE, NumCastableFormats: u32, pCastableFormats: *DXGI_FORMAT, riidResource: *IID, ppvResource: **void) -> HRESULT #cpp_method #foreign d3d12ma "?CreateAliasingResource2@Allocator@D3D12MA@@QEAAJPEAVAllocation@2@_KPEBUD3D12_RESOURCE_DESC1@@W4D3D12_BARRIER_LAYOUT@@PEBUD3D12_CLEAR_VALUE@@IPEAW4DXGI_FORMAT@@AEBU_GUID@@PEAPEAX@Z";
+        CreateAliasingResource2 :: (this: *D3D12MA.Allocator, pAllocation: *D3D12MA.Allocation, AllocationLocalOffset: u64, pResourceDesc: *D3D12_RESOURCE_DESC1, InitialLayout: D3D12_BARRIER_LAYOUT, pOptimizedClearValue: *D3D12_CLEAR_VALUE, NumCastableFormats: u32, pCastableFormats: *DXGI_FORMAT, riidResource: IID, ppvResource: **void) -> HRESULT #no_context {
             return CreateAliasingResource2(this, pAllocation, AllocationLocalOffset, pResourceDesc, InitialLayout, pOptimizedClearValue, NumCastableFormats, pCastableFormats, *riidResource, ppvResource);
         }
 
         /** \brief Creates custom pool.
         */
-        CreatePool :: (this: *Allocator, pPoolDesc: *POOL_DESC, ppPool: **Pool) -> HRESULT #cpp_method #foreign d3d12ma "?CreatePool@Allocator@D3D12MA@@QEAAJPEBUPOOL_DESC@2@PEAPEAVPool@2@@Z";
+        CreatePool :: (this: *D3D12MA.Allocator, pPoolDesc: *D3D12MA.POOL_DESC, ppPool: **D3D12MA.Pool) -> HRESULT #cpp_method #foreign d3d12ma "?CreatePool@Allocator@D3D12MA@@QEAAJPEBUPOOL_DESC@2@PEAPEAVPool@2@@Z";
 
         /** \brief Sets the index of the current frame.
         
         This function is used to set the frame index in the allocator when a new game frame begins.
         */
-        SetCurrentFrameIndex :: (this: *Allocator, frameIndex: u32) -> void #cpp_method #foreign d3d12ma "?SetCurrentFrameIndex@Allocator@D3D12MA@@QEAAXI@Z";
+        SetCurrentFrameIndex :: (this: *D3D12MA.Allocator, frameIndex: u32) -> void #cpp_method #foreign d3d12ma "?SetCurrentFrameIndex@Allocator@D3D12MA@@QEAAXI@Z";
 
         /** \brief Retrieves information about current memory usage and budget.
         
@@ -1126,7 +1144,7 @@ D3D12MA :: struct {
         Note that when using allocator from multiple threads, returned information may immediately
         become outdated.
         */
-        GetBudget :: (this: *Allocator, pLocalBudget: *Budget, pNonLocalBudget: *Budget) -> void #cpp_method #foreign d3d12ma "?GetBudget@Allocator@D3D12MA@@QEAAXPEAUBudget@2@0@Z";
+        GetBudget :: (this: *D3D12MA.Allocator, pLocalBudget: *D3D12MA.Budget, pNonLocalBudget: *D3D12MA.Budget) -> void #cpp_method #foreign d3d12ma "?GetBudget@Allocator@D3D12MA@@QEAAXPEAUBudget@2@0@Z";
 
         /** \brief Retrieves statistics from current state of the allocator.
         
@@ -1138,17 +1156,17 @@ D3D12MA :: struct {
         Note that when using allocator from multiple threads, returned information may immediately
         become outdated.
         */
-        CalculateStatistics :: (this: *Allocator, pStats: *TotalStatistics) -> void #cpp_method #foreign d3d12ma "?CalculateStatistics@Allocator@D3D12MA@@QEAAXPEAUTotalStatistics@2@@Z";
+        CalculateStatistics :: (this: *D3D12MA.Allocator, pStats: *D3D12MA.TotalStatistics) -> void #cpp_method #foreign d3d12ma "?CalculateStatistics@Allocator@D3D12MA@@QEAAXPEAUTotalStatistics@2@@Z";
 
         /** \brief Builds and returns statistics as a string in JSON format.
         *
         @param[out] ppStatsString Must be freed using Allocator::FreeStatsString.
         @param DetailedMap `TRUE` to include full list of allocations (can make the string quite long), `FALSE` to only return statistics.
         */
-        BuildStatsString :: (this: *Allocator, ppStatsString: **s16, DetailedMap: BOOL) -> void #cpp_method #foreign d3d12ma "?BuildStatsString@Allocator@D3D12MA@@QEBAXPEAPEA_WH@Z";
+        BuildStatsString :: (this: *D3D12MA.Allocator, ppStatsString: **s16, DetailedMap: BOOL) -> void #cpp_method #foreign d3d12ma "?BuildStatsString@Allocator@D3D12MA@@QEBAXPEAPEA_WH@Z";
 
         /// Frees memory of a string returned from Allocator::BuildStatsString.
-        FreeStatsString :: (this: *Allocator, pStatsString: *s16) -> void #cpp_method #foreign d3d12ma "?FreeStatsString@Allocator@D3D12MA@@QEBAXPEA_W@Z";
+        FreeStatsString :: (this: *D3D12MA.Allocator, pStatsString: *s16) -> void #cpp_method #foreign d3d12ma "?FreeStatsString@Allocator@D3D12MA@@QEBAXPEA_W@Z";
 
         /** \brief Begins defragmentation process of the default pools.
         
@@ -1158,23 +1176,23 @@ D3D12MA :: struct {
         For more information about defragmentation, see documentation chapter:
         [Defragmentation](@ref defragmentation).
         */
-        BeginDefragmentation :: (this: *Allocator, pDesc: *DEFRAGMENTATION_DESC, ppContext: **DefragmentationContext) -> void #cpp_method #foreign d3d12ma "?BeginDefragmentation@Allocator@D3D12MA@@QEAAXPEBUDEFRAGMENTATION_DESC@2@PEAPEAVDefragmentationContext@2@@Z";
+        BeginDefragmentation :: (this: *D3D12MA.Allocator, pDesc: *D3D12MA.DEFRAGMENTATION_DESC, ppContext: **D3D12MA.DefragmentationContext) -> void #cpp_method #foreign d3d12ma "?BeginDefragmentation@Allocator@D3D12MA@@QEAAXPEBUDEFRAGMENTATION_DESC@2@PEAPEAVDefragmentationContext@2@@Z";
 
-        Constructor :: (this: *Allocator, allocationCallbacks: *ALLOCATION_CALLBACKS, desc: *ALLOCATOR_DESC) -> void #cpp_method #foreign d3d12ma "??0Allocator@D3D12MA@@AEAA@AEBUALLOCATION_CALLBACKS@1@AEBUALLOCATOR_DESC@1@@Z";
-        Constructor :: (this: *Allocator, allocationCallbacks: ALLOCATION_CALLBACKS, desc: ALLOCATOR_DESC) #no_context {
+        Constructor :: (this: *D3D12MA.Allocator, allocationCallbacks: *D3D12MA.ALLOCATION_CALLBACKS, desc: *D3D12MA.ALLOCATOR_DESC) -> void #cpp_method #foreign d3d12ma "??0Allocator@D3D12MA@@AEAA@AEBUALLOCATION_CALLBACKS@1@AEBUALLOCATOR_DESC@1@@Z";
+        Constructor :: (this: *D3D12MA.Allocator, allocationCallbacks: D3D12MA.ALLOCATION_CALLBACKS, desc: D3D12MA.ALLOCATOR_DESC) #no_context {
             Constructor(this, *allocationCallbacks, *desc);
         }
 
-        m_Pimpl: *AllocatorPimpl;
+        m_Pimpl:                 *D3D12MA.AllocatorPimpl;
 
         // Virtual functions:
         // Normally you should call them via the vtable.
         // But these bindings can be useful if you need to call the parent implementation in a sub-struct’s overwritten method
         // or need to create a vtable yourself.
 
-        virtual_ReleaseThis :: (this: *Allocator) -> void #cpp_method #foreign d3d12ma "?ReleaseThis@Allocator@D3D12MA@@MEAAXXZ";
+        virtual_ReleaseThis :: (this: *D3D12MA.Allocator) -> void #cpp_method #foreign d3d12ma "?ReleaseThis@Allocator@D3D12MA@@MEAAXXZ";
 
-        virtual_Destructor :: (this: *Allocator, flags: Msvc_Destructor_Flags = .NONE) -> void #cpp_method #foreign d3d12ma "??1Allocator@D3D12MA@@EEAA@XZ";
+        virtual_Destructor :: (this: *D3D12MA.Allocator, flags: Msvc_Destructor_Flags = .NONE) -> void #cpp_method #foreign d3d12ma "??1Allocator@D3D12MA@@EEAA@XZ";
     }
 
     /// \brief Bit flags to be used with VIRTUAL_BLOCK_DESC::Flags.
@@ -1292,15 +1310,21 @@ D3D12MA :: struct {
     This object is not thread-safe - should not be used from multiple threads simultaneously, must be synchronized externally.
     */
     VirtualBlock :: struct {
-        #as using iunknownimpl: IUnknownImpl;
+        vtable:                  *IUnknownImpl_VTable;
+        using virtualblock__raw: VirtualBlock__RAW;
+        #place vtable; #as iunknownimpl: IUnknownImpl; // Support cast to IUnknownImpl
+    }
+        // VirtualBlock without vtable pointer. Needed to generate a C++-equivalent struct layout when "inheriting" from VirtualBlock
+    VirtualBlock__RAW :: struct {
+        using iunknownimpl__raw: IUnknownImpl__RAW;
 
         /** \brief Returns true if the block is empty - contains 0 allocations.
         */
-        IsEmpty :: (this: *VirtualBlock) -> BOOL #cpp_method #foreign d3d12ma "?IsEmpty@VirtualBlock@D3D12MA@@QEBAHXZ";
+        IsEmpty :: (this: *D3D12MA.VirtualBlock) -> BOOL #cpp_method #foreign d3d12ma "?IsEmpty@VirtualBlock@D3D12MA@@QEBAHXZ";
 
         /** \brief Returns information about an allocation - its offset, size and custom pointer.
         */
-        GetAllocationInfo :: (this: *VirtualBlock, allocation: VirtualAllocation, pInfo: *VIRTUAL_ALLOCATION_INFO) -> void #cpp_method #foreign d3d12ma "?GetAllocationInfo@VirtualBlock@D3D12MA@@QEBAXUVirtualAllocation@2@PEAUVIRTUAL_ALLOCATION_INFO@2@@Z";
+        GetAllocationInfo :: (this: *D3D12MA.VirtualBlock, allocation: D3D12MA.VirtualAllocation, pInfo: *D3D12MA.VIRTUAL_ALLOCATION_INFO) -> void #cpp_method #foreign d3d12ma "?GetAllocationInfo@VirtualBlock@D3D12MA@@QEBAXUVirtualAllocation@2@PEAUVIRTUAL_ALLOCATION_INFO@2@@Z";
 
         /** \brief Creates new allocation.
         \param pDesc
@@ -1310,47 +1334,47 @@ D3D12MA :: struct {
         
         If the allocation failed, `pAllocation->AllocHandle` is set to 0 and `pOffset`, if not null, is set to `UINT64_MAX`.
         */
-        Allocate :: (this: *VirtualBlock, pDesc: *VIRTUAL_ALLOCATION_DESC, pAllocation: *VirtualAllocation, pOffset: *u64) -> HRESULT #cpp_method #foreign d3d12ma "?Allocate@VirtualBlock@D3D12MA@@QEAAJPEBUVIRTUAL_ALLOCATION_DESC@2@PEAUVirtualAllocation@2@PEA_K@Z";
+        Allocate :: (this: *D3D12MA.VirtualBlock, pDesc: *D3D12MA.VIRTUAL_ALLOCATION_DESC, pAllocation: *D3D12MA.VirtualAllocation, pOffset: *u64) -> HRESULT #cpp_method #foreign d3d12ma "?Allocate@VirtualBlock@D3D12MA@@QEAAJPEBUVIRTUAL_ALLOCATION_DESC@2@PEAUVirtualAllocation@2@PEA_K@Z";
 
         /** \brief Frees the allocation.
         
         Calling this function with `allocation.AllocHandle == 0` is correct and does nothing.
         */
-        FreeAllocation :: (this: *VirtualBlock, allocation: VirtualAllocation) -> void #cpp_method #foreign d3d12ma "?FreeAllocation@VirtualBlock@D3D12MA@@QEAAXUVirtualAllocation@2@@Z";
+        FreeAllocation :: (this: *D3D12MA.VirtualBlock, allocation: D3D12MA.VirtualAllocation) -> void #cpp_method #foreign d3d12ma "?FreeAllocation@VirtualBlock@D3D12MA@@QEAAXUVirtualAllocation@2@@Z";
 
         /** \brief Frees all the allocations.
         */
-        Clear :: (this: *VirtualBlock) -> void #cpp_method #foreign d3d12ma "?Clear@VirtualBlock@D3D12MA@@QEAAXXZ";
+        Clear :: (this: *D3D12MA.VirtualBlock) -> void #cpp_method #foreign d3d12ma "?Clear@VirtualBlock@D3D12MA@@QEAAXXZ";
 
         /** \brief Changes custom pointer for an allocation to a new value.
         */
-        SetAllocationPrivateData :: (this: *VirtualBlock, allocation: VirtualAllocation, pPrivateData: *void) -> void #cpp_method #foreign d3d12ma "?SetAllocationPrivateData@VirtualBlock@D3D12MA@@QEAAXUVirtualAllocation@2@PEAX@Z";
+        SetAllocationPrivateData :: (this: *D3D12MA.VirtualBlock, allocation: D3D12MA.VirtualAllocation, pPrivateData: *void) -> void #cpp_method #foreign d3d12ma "?SetAllocationPrivateData@VirtualBlock@D3D12MA@@QEAAXUVirtualAllocation@2@PEAX@Z";
 
         /** \brief Retrieves basic statistics of the virtual block that are fast to calculate.
         
         \param[out] pStats %Statistics of the virtual block.
         */
-        GetStatistics :: (this: *VirtualBlock, pStats: *Statistics) -> void #cpp_method #foreign d3d12ma "?GetStatistics@VirtualBlock@D3D12MA@@QEBAXPEAUStatistics@2@@Z";
+        GetStatistics :: (this: *D3D12MA.VirtualBlock, pStats: *D3D12MA.Statistics) -> void #cpp_method #foreign d3d12ma "?GetStatistics@VirtualBlock@D3D12MA@@QEBAXPEAUStatistics@2@@Z";
 
         /** \brief Retrieves detailed statistics of the virtual block that are slower to calculate.
         
         \param[out] pStats %Statistics of the virtual block.
         */
-        CalculateStatistics :: (this: *VirtualBlock, pStats: *DetailedStatistics) -> void #cpp_method #foreign d3d12ma "?CalculateStatistics@VirtualBlock@D3D12MA@@QEBAXPEAUDetailedStatistics@2@@Z";
+        CalculateStatistics :: (this: *D3D12MA.VirtualBlock, pStats: *D3D12MA.DetailedStatistics) -> void #cpp_method #foreign d3d12ma "?CalculateStatistics@VirtualBlock@D3D12MA@@QEBAXPEAUDetailedStatistics@2@@Z";
 
         /** \brief Builds and returns statistics as a string in JSON format, including the list of allocations with their parameters.
         @param[out] ppStatsString Must be freed using VirtualBlock::FreeStatsString.
         */
-        BuildStatsString :: (this: *VirtualBlock, ppStatsString: **s16) -> void #cpp_method #foreign d3d12ma "?BuildStatsString@VirtualBlock@D3D12MA@@QEBAXPEAPEA_W@Z";
+        BuildStatsString :: (this: *D3D12MA.VirtualBlock, ppStatsString: **s16) -> void #cpp_method #foreign d3d12ma "?BuildStatsString@VirtualBlock@D3D12MA@@QEBAXPEAPEA_W@Z";
 
         /** \brief Frees memory of a string returned from VirtualBlock::BuildStatsString.
         */
-        FreeStatsString :: (this: *VirtualBlock, pStatsString: *s16) -> void #cpp_method #foreign d3d12ma "?FreeStatsString@VirtualBlock@D3D12MA@@QEBAXPEA_W@Z";
+        FreeStatsString :: (this: *D3D12MA.VirtualBlock, pStatsString: *s16) -> void #cpp_method #foreign d3d12ma "?FreeStatsString@VirtualBlock@D3D12MA@@QEBAXPEA_W@Z";
 
-        m_Pimpl: *VirtualBlockPimpl;
+        m_Pimpl:                 *D3D12MA.VirtualBlockPimpl;
 
-        Constructor :: (this: *VirtualBlock, allocationCallbacks: *ALLOCATION_CALLBACKS, desc: *VIRTUAL_BLOCK_DESC) -> void #cpp_method #foreign d3d12ma "??0VirtualBlock@D3D12MA@@AEAA@AEBUALLOCATION_CALLBACKS@1@AEBUVIRTUAL_BLOCK_DESC@1@@Z";
-        Constructor :: (this: *VirtualBlock, allocationCallbacks: ALLOCATION_CALLBACKS, desc: VIRTUAL_BLOCK_DESC) #no_context {
+        Constructor :: (this: *D3D12MA.VirtualBlock, allocationCallbacks: *D3D12MA.ALLOCATION_CALLBACKS, desc: *D3D12MA.VIRTUAL_BLOCK_DESC) -> void #cpp_method #foreign d3d12ma "??0VirtualBlock@D3D12MA@@AEAA@AEBUALLOCATION_CALLBACKS@1@AEBUVIRTUAL_BLOCK_DESC@1@@Z";
+        Constructor :: (this: *D3D12MA.VirtualBlock, allocationCallbacks: D3D12MA.ALLOCATION_CALLBACKS, desc: D3D12MA.VIRTUAL_BLOCK_DESC) #no_context {
             Constructor(this, *allocationCallbacks, *desc);
         }
 
@@ -1359,9 +1383,9 @@ D3D12MA :: struct {
         // But these bindings can be useful if you need to call the parent implementation in a sub-struct’s overwritten method
         // or need to create a vtable yourself.
 
-        virtual_ReleaseThis :: (this: *VirtualBlock) -> void #cpp_method #foreign d3d12ma "?ReleaseThis@VirtualBlock@D3D12MA@@MEAAXXZ";
+        virtual_ReleaseThis :: (this: *D3D12MA.VirtualBlock) -> void #cpp_method #foreign d3d12ma "?ReleaseThis@VirtualBlock@D3D12MA@@MEAAXXZ";
 
-        virtual_Destructor :: (this: *VirtualBlock, flags: Msvc_Destructor_Flags = .NONE) -> void #cpp_method #foreign d3d12ma "??1VirtualBlock@D3D12MA@@EEAA@XZ";
+        virtual_Destructor :: (this: *D3D12MA.VirtualBlock, flags: Msvc_Destructor_Flags = .NONE) -> void #cpp_method #foreign d3d12ma "??1VirtualBlock@D3D12MA@@EEAA@XZ";
     }
 
     /** \brief Creates new main D3D12MA::Allocator object and returns it through `ppAllocator`.
@@ -1403,449 +1427,7 @@ D3D12MA :: struct {
 
 #scope_file
 
-#import "Basic"; // For assert
-
-d3d12ma :: #library "./D3D12MA";
-
-#run {
-    {
-        info := type_info(D3D12MA.IUnknownImpl);
-        for info.members {
-            if it.name == {
-                case "m_RefCount";
-                    assert(it.offset_in_bytes == 8, "D3D12MA.IUnknownImpl.m_RefCount has unexpected offset % instead of 8", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 4, "D3D12MA.IUnknownImpl.m_RefCount has unexpected size % instead of 4", it.type.runtime_size);
-            }
-        }
-        assert(size_of(D3D12MA.IUnknownImpl) == 16, "D3D12MA.IUnknownImpl has size % instead of 16", size_of(D3D12MA.IUnknownImpl));
-    }
-
-    {
-        info := type_info(D3D12MA.ALLOCATION_CALLBACKS);
-        for info.members {
-            if it.name == {
-                case "pAllocate";
-                    assert(it.offset_in_bytes == 0, "D3D12MA.ALLOCATION_CALLBACKS.pAllocate has unexpected offset % instead of 0", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.ALLOCATION_CALLBACKS.pAllocate has unexpected size % instead of 8", it.type.runtime_size);
-                case "pFree";
-                    assert(it.offset_in_bytes == 8, "D3D12MA.ALLOCATION_CALLBACKS.pFree has unexpected offset % instead of 8", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.ALLOCATION_CALLBACKS.pFree has unexpected size % instead of 8", it.type.runtime_size);
-                case "pPrivateData";
-                    assert(it.offset_in_bytes == 16, "D3D12MA.ALLOCATION_CALLBACKS.pPrivateData has unexpected offset % instead of 16", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.ALLOCATION_CALLBACKS.pPrivateData has unexpected size % instead of 8", it.type.runtime_size);
-            }
-        }
-        assert(size_of(D3D12MA.ALLOCATION_CALLBACKS) == 24, "D3D12MA.ALLOCATION_CALLBACKS has size % instead of 24", size_of(D3D12MA.ALLOCATION_CALLBACKS));
-    }
-
-    {
-        info := type_info(D3D12MA.ALLOCATION_DESC);
-        for info.members {
-            if it.name == {
-                case "Flags";
-                    assert(it.offset_in_bytes == 0, "D3D12MA.ALLOCATION_DESC.Flags has unexpected offset % instead of 0", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 4, "D3D12MA.ALLOCATION_DESC.Flags has unexpected size % instead of 4", it.type.runtime_size);
-                case "HeapType";
-                    assert(it.offset_in_bytes == 4, "D3D12MA.ALLOCATION_DESC.HeapType has unexpected offset % instead of 4", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 4, "D3D12MA.ALLOCATION_DESC.HeapType has unexpected size % instead of 4", it.type.runtime_size);
-                case "ExtraHeapFlags";
-                    assert(it.offset_in_bytes == 8, "D3D12MA.ALLOCATION_DESC.ExtraHeapFlags has unexpected offset % instead of 8", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 4, "D3D12MA.ALLOCATION_DESC.ExtraHeapFlags has unexpected size % instead of 4", it.type.runtime_size);
-                case "CustomPool";
-                    assert(it.offset_in_bytes == 16, "D3D12MA.ALLOCATION_DESC.CustomPool has unexpected offset % instead of 16", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.ALLOCATION_DESC.CustomPool has unexpected size % instead of 8", it.type.runtime_size);
-                case "pPrivateData";
-                    assert(it.offset_in_bytes == 24, "D3D12MA.ALLOCATION_DESC.pPrivateData has unexpected offset % instead of 24", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.ALLOCATION_DESC.pPrivateData has unexpected size % instead of 8", it.type.runtime_size);
-            }
-        }
-        assert(size_of(D3D12MA.ALLOCATION_DESC) == 32, "D3D12MA.ALLOCATION_DESC has size % instead of 32", size_of(D3D12MA.ALLOCATION_DESC));
-    }
-
-    {
-        info := type_info(D3D12MA.Statistics);
-        for info.members {
-            if it.name == {
-                case "BlockCount";
-                    assert(it.offset_in_bytes == 0, "D3D12MA.Statistics.BlockCount has unexpected offset % instead of 0", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 4, "D3D12MA.Statistics.BlockCount has unexpected size % instead of 4", it.type.runtime_size);
-                case "AllocationCount";
-                    assert(it.offset_in_bytes == 4, "D3D12MA.Statistics.AllocationCount has unexpected offset % instead of 4", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 4, "D3D12MA.Statistics.AllocationCount has unexpected size % instead of 4", it.type.runtime_size);
-                case "BlockBytes";
-                    assert(it.offset_in_bytes == 8, "D3D12MA.Statistics.BlockBytes has unexpected offset % instead of 8", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.Statistics.BlockBytes has unexpected size % instead of 8", it.type.runtime_size);
-                case "AllocationBytes";
-                    assert(it.offset_in_bytes == 16, "D3D12MA.Statistics.AllocationBytes has unexpected offset % instead of 16", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.Statistics.AllocationBytes has unexpected size % instead of 8", it.type.runtime_size);
-            }
-        }
-        assert(size_of(D3D12MA.Statistics) == 24, "D3D12MA.Statistics has size % instead of 24", size_of(D3D12MA.Statistics));
-    }
-
-    {
-        info := type_info(D3D12MA.DetailedStatistics);
-        for info.members {
-            if it.name == {
-                case "Stats";
-                    assert(it.offset_in_bytes == 0, "D3D12MA.DetailedStatistics.Stats has unexpected offset % instead of 0", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 24, "D3D12MA.DetailedStatistics.Stats has unexpected size % instead of 24", it.type.runtime_size);
-                case "UnusedRangeCount";
-                    assert(it.offset_in_bytes == 24, "D3D12MA.DetailedStatistics.UnusedRangeCount has unexpected offset % instead of 24", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 4, "D3D12MA.DetailedStatistics.UnusedRangeCount has unexpected size % instead of 4", it.type.runtime_size);
-                case "AllocationSizeMin";
-                    assert(it.offset_in_bytes == 32, "D3D12MA.DetailedStatistics.AllocationSizeMin has unexpected offset % instead of 32", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.DetailedStatistics.AllocationSizeMin has unexpected size % instead of 8", it.type.runtime_size);
-                case "AllocationSizeMax";
-                    assert(it.offset_in_bytes == 40, "D3D12MA.DetailedStatistics.AllocationSizeMax has unexpected offset % instead of 40", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.DetailedStatistics.AllocationSizeMax has unexpected size % instead of 8", it.type.runtime_size);
-                case "UnusedRangeSizeMin";
-                    assert(it.offset_in_bytes == 48, "D3D12MA.DetailedStatistics.UnusedRangeSizeMin has unexpected offset % instead of 48", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.DetailedStatistics.UnusedRangeSizeMin has unexpected size % instead of 8", it.type.runtime_size);
-                case "UnusedRangeSizeMax";
-                    assert(it.offset_in_bytes == 56, "D3D12MA.DetailedStatistics.UnusedRangeSizeMax has unexpected offset % instead of 56", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.DetailedStatistics.UnusedRangeSizeMax has unexpected size % instead of 8", it.type.runtime_size);
-            }
-        }
-        assert(size_of(D3D12MA.DetailedStatistics) == 64, "D3D12MA.DetailedStatistics has size % instead of 64", size_of(D3D12MA.DetailedStatistics));
-    }
-
-    {
-        info := type_info(D3D12MA.TotalStatistics);
-        for info.members {
-            if it.name == {
-                case "HeapType";
-                    assert(it.offset_in_bytes == 0, "D3D12MA.TotalStatistics.HeapType has unexpected offset % instead of 0", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 320, "D3D12MA.TotalStatistics.HeapType has unexpected size % instead of 320", it.type.runtime_size);
-                case "MemorySegmentGroup";
-                    assert(it.offset_in_bytes == 320, "D3D12MA.TotalStatistics.MemorySegmentGroup has unexpected offset % instead of 320", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 128, "D3D12MA.TotalStatistics.MemorySegmentGroup has unexpected size % instead of 128", it.type.runtime_size);
-                case "Total";
-                    assert(it.offset_in_bytes == 448, "D3D12MA.TotalStatistics.Total has unexpected offset % instead of 448", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 64, "D3D12MA.TotalStatistics.Total has unexpected size % instead of 64", it.type.runtime_size);
-            }
-        }
-        assert(size_of(D3D12MA.TotalStatistics) == 512, "D3D12MA.TotalStatistics has size % instead of 512", size_of(D3D12MA.TotalStatistics));
-    }
-
-    {
-        info := type_info(D3D12MA.Budget);
-        for info.members {
-            if it.name == {
-                case "Stats";
-                    assert(it.offset_in_bytes == 0, "D3D12MA.Budget.Stats has unexpected offset % instead of 0", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 24, "D3D12MA.Budget.Stats has unexpected size % instead of 24", it.type.runtime_size);
-                case "UsageBytes";
-                    assert(it.offset_in_bytes == 24, "D3D12MA.Budget.UsageBytes has unexpected offset % instead of 24", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.Budget.UsageBytes has unexpected size % instead of 8", it.type.runtime_size);
-                case "BudgetBytes";
-                    assert(it.offset_in_bytes == 32, "D3D12MA.Budget.BudgetBytes has unexpected offset % instead of 32", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.Budget.BudgetBytes has unexpected size % instead of 8", it.type.runtime_size);
-            }
-        }
-        assert(size_of(D3D12MA.Budget) == 40, "D3D12MA.Budget has size % instead of 40", size_of(D3D12MA.Budget));
-    }
-
-    {
-        info := type_info(D3D12MA.VirtualAllocation);
-        for info.members {
-            if it.name == {
-                case "AllocHandle_";
-                    assert(it.offset_in_bytes == 0, "D3D12MA.VirtualAllocation.AllocHandle_ has unexpected offset % instead of 0", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.VirtualAllocation.AllocHandle_ has unexpected size % instead of 8", it.type.runtime_size);
-            }
-        }
-        assert(size_of(D3D12MA.VirtualAllocation) == 8, "D3D12MA.VirtualAllocation has size % instead of 8", size_of(D3D12MA.VirtualAllocation));
-    }
-
-    {
-        info := type_info(D3D12MA.Allocation.PackedData);
-        for info.members {
-            if it.name == {
-                case "__bitfield";
-                    assert(it.offset_in_bytes == 0, "D3D12MA.Allocation.PackedData.__bitfield has unexpected offset % instead of 0", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 5, "D3D12MA.Allocation.PackedData.__bitfield has unexpected size % instead of 5", it.type.runtime_size);
-            }
-        }
-        assert(size_of(D3D12MA.Allocation.PackedData) == 8, "D3D12MA.Allocation.PackedData has size % instead of 8", size_of(D3D12MA.Allocation.PackedData));
-    }
-
-    {
-        info := type_info(D3D12MA.Allocation);
-        for info.members {
-            if it.name == {
-                case "m_Allocator";
-                    assert(it.offset_in_bytes == 16, "D3D12MA.Allocation.m_Allocator has unexpected offset % instead of 16", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.Allocation.m_Allocator has unexpected size % instead of 8", it.type.runtime_size);
-                case "m_Size";
-                    assert(it.offset_in_bytes == 24, "D3D12MA.Allocation.m_Size has unexpected offset % instead of 24", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.Allocation.m_Size has unexpected size % instead of 8", it.type.runtime_size);
-                case "m_Alignment";
-                    assert(it.offset_in_bytes == 32, "D3D12MA.Allocation.m_Alignment has unexpected offset % instead of 32", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.Allocation.m_Alignment has unexpected size % instead of 8", it.type.runtime_size);
-                case "m_Resource";
-                    assert(it.offset_in_bytes == 40, "D3D12MA.Allocation.m_Resource has unexpected offset % instead of 40", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.Allocation.m_Resource has unexpected size % instead of 8", it.type.runtime_size);
-                case "m_pPrivateData";
-                    assert(it.offset_in_bytes == 48, "D3D12MA.Allocation.m_pPrivateData has unexpected offset % instead of 48", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.Allocation.m_pPrivateData has unexpected size % instead of 8", it.type.runtime_size);
-                case "m_Name";
-                    assert(it.offset_in_bytes == 56, "D3D12MA.Allocation.m_Name has unexpected offset % instead of 56", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.Allocation.m_Name has unexpected size % instead of 8", it.type.runtime_size);
-                case "m_PackedData";
-                    assert(it.offset_in_bytes == 96, "D3D12MA.Allocation.m_PackedData has unexpected offset % instead of 96", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.Allocation.m_PackedData has unexpected size % instead of 8", it.type.runtime_size);
-            }
-        }
-        assert(size_of(D3D12MA.Allocation) == 104, "D3D12MA.Allocation has size % instead of 104", size_of(D3D12MA.Allocation));
-    }
-
-    {
-        info := type_info(D3D12MA.DEFRAGMENTATION_DESC);
-        for info.members {
-            if it.name == {
-                case "Flags";
-                    assert(it.offset_in_bytes == 0, "D3D12MA.DEFRAGMENTATION_DESC.Flags has unexpected offset % instead of 0", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 4, "D3D12MA.DEFRAGMENTATION_DESC.Flags has unexpected size % instead of 4", it.type.runtime_size);
-                case "MaxBytesPerPass";
-                    assert(it.offset_in_bytes == 8, "D3D12MA.DEFRAGMENTATION_DESC.MaxBytesPerPass has unexpected offset % instead of 8", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.DEFRAGMENTATION_DESC.MaxBytesPerPass has unexpected size % instead of 8", it.type.runtime_size);
-                case "MaxAllocationsPerPass";
-                    assert(it.offset_in_bytes == 16, "D3D12MA.DEFRAGMENTATION_DESC.MaxAllocationsPerPass has unexpected offset % instead of 16", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 4, "D3D12MA.DEFRAGMENTATION_DESC.MaxAllocationsPerPass has unexpected size % instead of 4", it.type.runtime_size);
-            }
-        }
-        assert(size_of(D3D12MA.DEFRAGMENTATION_DESC) == 24, "D3D12MA.DEFRAGMENTATION_DESC has size % instead of 24", size_of(D3D12MA.DEFRAGMENTATION_DESC));
-    }
-
-    {
-        info := type_info(D3D12MA.DEFRAGMENTATION_MOVE);
-        for info.members {
-            if it.name == {
-                case "Operation";
-                    assert(it.offset_in_bytes == 0, "D3D12MA.DEFRAGMENTATION_MOVE.Operation has unexpected offset % instead of 0", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 4, "D3D12MA.DEFRAGMENTATION_MOVE.Operation has unexpected size % instead of 4", it.type.runtime_size);
-                case "pSrcAllocation";
-                    assert(it.offset_in_bytes == 8, "D3D12MA.DEFRAGMENTATION_MOVE.pSrcAllocation has unexpected offset % instead of 8", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.DEFRAGMENTATION_MOVE.pSrcAllocation has unexpected size % instead of 8", it.type.runtime_size);
-                case "pDstTmpAllocation";
-                    assert(it.offset_in_bytes == 16, "D3D12MA.DEFRAGMENTATION_MOVE.pDstTmpAllocation has unexpected offset % instead of 16", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.DEFRAGMENTATION_MOVE.pDstTmpAllocation has unexpected size % instead of 8", it.type.runtime_size);
-            }
-        }
-        assert(size_of(D3D12MA.DEFRAGMENTATION_MOVE) == 24, "D3D12MA.DEFRAGMENTATION_MOVE has size % instead of 24", size_of(D3D12MA.DEFRAGMENTATION_MOVE));
-    }
-
-    {
-        info := type_info(D3D12MA.DEFRAGMENTATION_PASS_MOVE_INFO);
-        for info.members {
-            if it.name == {
-                case "MoveCount";
-                    assert(it.offset_in_bytes == 0, "D3D12MA.DEFRAGMENTATION_PASS_MOVE_INFO.MoveCount has unexpected offset % instead of 0", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 4, "D3D12MA.DEFRAGMENTATION_PASS_MOVE_INFO.MoveCount has unexpected size % instead of 4", it.type.runtime_size);
-                case "pMoves";
-                    assert(it.offset_in_bytes == 8, "D3D12MA.DEFRAGMENTATION_PASS_MOVE_INFO.pMoves has unexpected offset % instead of 8", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.DEFRAGMENTATION_PASS_MOVE_INFO.pMoves has unexpected size % instead of 8", it.type.runtime_size);
-            }
-        }
-        assert(size_of(D3D12MA.DEFRAGMENTATION_PASS_MOVE_INFO) == 16, "D3D12MA.DEFRAGMENTATION_PASS_MOVE_INFO has size % instead of 16", size_of(D3D12MA.DEFRAGMENTATION_PASS_MOVE_INFO));
-    }
-
-    {
-        info := type_info(D3D12MA.DEFRAGMENTATION_STATS);
-        for info.members {
-            if it.name == {
-                case "BytesMoved";
-                    assert(it.offset_in_bytes == 0, "D3D12MA.DEFRAGMENTATION_STATS.BytesMoved has unexpected offset % instead of 0", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.DEFRAGMENTATION_STATS.BytesMoved has unexpected size % instead of 8", it.type.runtime_size);
-                case "BytesFreed";
-                    assert(it.offset_in_bytes == 8, "D3D12MA.DEFRAGMENTATION_STATS.BytesFreed has unexpected offset % instead of 8", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.DEFRAGMENTATION_STATS.BytesFreed has unexpected size % instead of 8", it.type.runtime_size);
-                case "AllocationsMoved";
-                    assert(it.offset_in_bytes == 16, "D3D12MA.DEFRAGMENTATION_STATS.AllocationsMoved has unexpected offset % instead of 16", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 4, "D3D12MA.DEFRAGMENTATION_STATS.AllocationsMoved has unexpected size % instead of 4", it.type.runtime_size);
-                case "HeapsFreed";
-                    assert(it.offset_in_bytes == 20, "D3D12MA.DEFRAGMENTATION_STATS.HeapsFreed has unexpected offset % instead of 20", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 4, "D3D12MA.DEFRAGMENTATION_STATS.HeapsFreed has unexpected size % instead of 4", it.type.runtime_size);
-            }
-        }
-        assert(size_of(D3D12MA.DEFRAGMENTATION_STATS) == 24, "D3D12MA.DEFRAGMENTATION_STATS has size % instead of 24", size_of(D3D12MA.DEFRAGMENTATION_STATS));
-    }
-
-    {
-        info := type_info(D3D12MA.DefragmentationContext);
-        for info.members {
-            if it.name == {
-                case "m_Pimpl";
-                    assert(it.offset_in_bytes == 16, "D3D12MA.DefragmentationContext.m_Pimpl has unexpected offset % instead of 16", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.DefragmentationContext.m_Pimpl has unexpected size % instead of 8", it.type.runtime_size);
-            }
-        }
-        assert(size_of(D3D12MA.DefragmentationContext) == 24, "D3D12MA.DefragmentationContext has size % instead of 24", size_of(D3D12MA.DefragmentationContext));
-    }
-
-    {
-        info := type_info(D3D12MA.POOL_DESC);
-        for info.members {
-            if it.name == {
-                case "Flags";
-                    assert(it.offset_in_bytes == 0, "D3D12MA.POOL_DESC.Flags has unexpected offset % instead of 0", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 4, "D3D12MA.POOL_DESC.Flags has unexpected size % instead of 4", it.type.runtime_size);
-                case "HeapProperties";
-                    assert(it.offset_in_bytes == 4, "D3D12MA.POOL_DESC.HeapProperties has unexpected offset % instead of 4", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 20, "D3D12MA.POOL_DESC.HeapProperties has unexpected size % instead of 20", it.type.runtime_size);
-                case "HeapFlags";
-                    assert(it.offset_in_bytes == 24, "D3D12MA.POOL_DESC.HeapFlags has unexpected offset % instead of 24", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 4, "D3D12MA.POOL_DESC.HeapFlags has unexpected size % instead of 4", it.type.runtime_size);
-                case "BlockSize";
-                    assert(it.offset_in_bytes == 32, "D3D12MA.POOL_DESC.BlockSize has unexpected offset % instead of 32", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.POOL_DESC.BlockSize has unexpected size % instead of 8", it.type.runtime_size);
-                case "MinBlockCount";
-                    assert(it.offset_in_bytes == 40, "D3D12MA.POOL_DESC.MinBlockCount has unexpected offset % instead of 40", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 4, "D3D12MA.POOL_DESC.MinBlockCount has unexpected size % instead of 4", it.type.runtime_size);
-                case "MaxBlockCount";
-                    assert(it.offset_in_bytes == 44, "D3D12MA.POOL_DESC.MaxBlockCount has unexpected offset % instead of 44", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 4, "D3D12MA.POOL_DESC.MaxBlockCount has unexpected size % instead of 4", it.type.runtime_size);
-                case "MinAllocationAlignment";
-                    assert(it.offset_in_bytes == 48, "D3D12MA.POOL_DESC.MinAllocationAlignment has unexpected offset % instead of 48", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.POOL_DESC.MinAllocationAlignment has unexpected size % instead of 8", it.type.runtime_size);
-                case "pProtectedSession";
-                    assert(it.offset_in_bytes == 56, "D3D12MA.POOL_DESC.pProtectedSession has unexpected offset % instead of 56", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.POOL_DESC.pProtectedSession has unexpected size % instead of 8", it.type.runtime_size);
-                case "ResidencyPriority";
-                    assert(it.offset_in_bytes == 64, "D3D12MA.POOL_DESC.ResidencyPriority has unexpected offset % instead of 64", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 4, "D3D12MA.POOL_DESC.ResidencyPriority has unexpected size % instead of 4", it.type.runtime_size);
-            }
-        }
-        assert(size_of(D3D12MA.POOL_DESC) == 72, "D3D12MA.POOL_DESC has size % instead of 72", size_of(D3D12MA.POOL_DESC));
-    }
-
-    {
-        info := type_info(D3D12MA.Pool);
-        for info.members {
-            if it.name == {
-                case "m_Pimpl";
-                    assert(it.offset_in_bytes == 16, "D3D12MA.Pool.m_Pimpl has unexpected offset % instead of 16", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.Pool.m_Pimpl has unexpected size % instead of 8", it.type.runtime_size);
-            }
-        }
-        assert(size_of(D3D12MA.Pool) == 24, "D3D12MA.Pool has size % instead of 24", size_of(D3D12MA.Pool));
-    }
-
-    {
-        info := type_info(D3D12MA.ALLOCATOR_DESC);
-        for info.members {
-            if it.name == {
-                case "Flags";
-                    assert(it.offset_in_bytes == 0, "D3D12MA.ALLOCATOR_DESC.Flags has unexpected offset % instead of 0", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 4, "D3D12MA.ALLOCATOR_DESC.Flags has unexpected size % instead of 4", it.type.runtime_size);
-                case "pDevice";
-                    assert(it.offset_in_bytes == 8, "D3D12MA.ALLOCATOR_DESC.pDevice has unexpected offset % instead of 8", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.ALLOCATOR_DESC.pDevice has unexpected size % instead of 8", it.type.runtime_size);
-                case "PreferredBlockSize";
-                    assert(it.offset_in_bytes == 16, "D3D12MA.ALLOCATOR_DESC.PreferredBlockSize has unexpected offset % instead of 16", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.ALLOCATOR_DESC.PreferredBlockSize has unexpected size % instead of 8", it.type.runtime_size);
-                case "pAllocationCallbacks";
-                    assert(it.offset_in_bytes == 24, "D3D12MA.ALLOCATOR_DESC.pAllocationCallbacks has unexpected offset % instead of 24", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.ALLOCATOR_DESC.pAllocationCallbacks has unexpected size % instead of 8", it.type.runtime_size);
-                case "pAdapter";
-                    assert(it.offset_in_bytes == 32, "D3D12MA.ALLOCATOR_DESC.pAdapter has unexpected offset % instead of 32", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.ALLOCATOR_DESC.pAdapter has unexpected size % instead of 8", it.type.runtime_size);
-            }
-        }
-        assert(size_of(D3D12MA.ALLOCATOR_DESC) == 40, "D3D12MA.ALLOCATOR_DESC has size % instead of 40", size_of(D3D12MA.ALLOCATOR_DESC));
-    }
-
-    {
-        info := type_info(D3D12MA.Allocator);
-        for info.members {
-            if it.name == {
-                case "m_Pimpl";
-                    assert(it.offset_in_bytes == 16, "D3D12MA.Allocator.m_Pimpl has unexpected offset % instead of 16", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.Allocator.m_Pimpl has unexpected size % instead of 8", it.type.runtime_size);
-            }
-        }
-        assert(size_of(D3D12MA.Allocator) == 24, "D3D12MA.Allocator has size % instead of 24", size_of(D3D12MA.Allocator));
-    }
-
-    {
-        info := type_info(D3D12MA.VIRTUAL_BLOCK_DESC);
-        for info.members {
-            if it.name == {
-                case "Flags";
-                    assert(it.offset_in_bytes == 0, "D3D12MA.VIRTUAL_BLOCK_DESC.Flags has unexpected offset % instead of 0", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 4, "D3D12MA.VIRTUAL_BLOCK_DESC.Flags has unexpected size % instead of 4", it.type.runtime_size);
-                case "Size";
-                    assert(it.offset_in_bytes == 8, "D3D12MA.VIRTUAL_BLOCK_DESC.Size has unexpected offset % instead of 8", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.VIRTUAL_BLOCK_DESC.Size has unexpected size % instead of 8", it.type.runtime_size);
-                case "pAllocationCallbacks";
-                    assert(it.offset_in_bytes == 16, "D3D12MA.VIRTUAL_BLOCK_DESC.pAllocationCallbacks has unexpected offset % instead of 16", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.VIRTUAL_BLOCK_DESC.pAllocationCallbacks has unexpected size % instead of 8", it.type.runtime_size);
-            }
-        }
-        assert(size_of(D3D12MA.VIRTUAL_BLOCK_DESC) == 24, "D3D12MA.VIRTUAL_BLOCK_DESC has size % instead of 24", size_of(D3D12MA.VIRTUAL_BLOCK_DESC));
-    }
-
-    {
-        info := type_info(D3D12MA.VIRTUAL_ALLOCATION_DESC);
-        for info.members {
-            if it.name == {
-                case "Flags";
-                    assert(it.offset_in_bytes == 0, "D3D12MA.VIRTUAL_ALLOCATION_DESC.Flags has unexpected offset % instead of 0", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 4, "D3D12MA.VIRTUAL_ALLOCATION_DESC.Flags has unexpected size % instead of 4", it.type.runtime_size);
-                case "Size";
-                    assert(it.offset_in_bytes == 8, "D3D12MA.VIRTUAL_ALLOCATION_DESC.Size has unexpected offset % instead of 8", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.VIRTUAL_ALLOCATION_DESC.Size has unexpected size % instead of 8", it.type.runtime_size);
-                case "Alignment";
-                    assert(it.offset_in_bytes == 16, "D3D12MA.VIRTUAL_ALLOCATION_DESC.Alignment has unexpected offset % instead of 16", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.VIRTUAL_ALLOCATION_DESC.Alignment has unexpected size % instead of 8", it.type.runtime_size);
-                case "pPrivateData";
-                    assert(it.offset_in_bytes == 24, "D3D12MA.VIRTUAL_ALLOCATION_DESC.pPrivateData has unexpected offset % instead of 24", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.VIRTUAL_ALLOCATION_DESC.pPrivateData has unexpected size % instead of 8", it.type.runtime_size);
-            }
-        }
-        assert(size_of(D3D12MA.VIRTUAL_ALLOCATION_DESC) == 32, "D3D12MA.VIRTUAL_ALLOCATION_DESC has size % instead of 32", size_of(D3D12MA.VIRTUAL_ALLOCATION_DESC));
-    }
-
-    {
-        info := type_info(D3D12MA.VIRTUAL_ALLOCATION_INFO);
-        for info.members {
-            if it.name == {
-                case "Offset";
-                    assert(it.offset_in_bytes == 0, "D3D12MA.VIRTUAL_ALLOCATION_INFO.Offset has unexpected offset % instead of 0", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.VIRTUAL_ALLOCATION_INFO.Offset has unexpected size % instead of 8", it.type.runtime_size);
-                case "Size";
-                    assert(it.offset_in_bytes == 8, "D3D12MA.VIRTUAL_ALLOCATION_INFO.Size has unexpected offset % instead of 8", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.VIRTUAL_ALLOCATION_INFO.Size has unexpected size % instead of 8", it.type.runtime_size);
-                case "pPrivateData";
-                    assert(it.offset_in_bytes == 16, "D3D12MA.VIRTUAL_ALLOCATION_INFO.pPrivateData has unexpected offset % instead of 16", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.VIRTUAL_ALLOCATION_INFO.pPrivateData has unexpected size % instead of 8", it.type.runtime_size);
-            }
-        }
-        assert(size_of(D3D12MA.VIRTUAL_ALLOCATION_INFO) == 24, "D3D12MA.VIRTUAL_ALLOCATION_INFO has size % instead of 24", size_of(D3D12MA.VIRTUAL_ALLOCATION_INFO));
-    }
-
-    {
-        info := type_info(D3D12MA.VirtualBlock);
-        for info.members {
-            if it.name == {
-                case "m_Pimpl";
-                    assert(it.offset_in_bytes == 16, "D3D12MA.VirtualBlock.m_Pimpl has unexpected offset % instead of 16", it.offset_in_bytes);
-                    assert(it.type.runtime_size == 8, "D3D12MA.VirtualBlock.m_Pimpl has unexpected size % instead of 8", it.type.runtime_size);
-            }
-        }
-        assert(size_of(D3D12MA.VirtualBlock) == 24, "D3D12MA.VirtualBlock has size % instead of 24", size_of(D3D12MA.VirtualBlock));
-    }
-
-    assert(size_of(D3D12MA.CALLOCATION_DESC) == 32, "D3D12MA.CALLOCATION_DESC has size % instead of 32", size_of(D3D12MA.CALLOCATION_DESC));
-
-    assert(size_of(D3D12MA.CPOOL_DESC) == 72, "D3D12MA.CPOOL_DESC has size % instead of 72", size_of(D3D12MA.CPOOL_DESC));
-
-    assert(size_of(D3D12MA.CVIRTUAL_BLOCK_DESC) == 24, "D3D12MA.CVIRTUAL_BLOCK_DESC has size % instead of 24", size_of(D3D12MA.CVIRTUAL_BLOCK_DESC));
-
-    assert(size_of(D3D12MA.CVIRTUAL_ALLOCATION_DESC) == 32, "D3D12MA.CVIRTUAL_ALLOCATION_DESC has size % instead of 32", size_of(D3D12MA.CVIRTUAL_ALLOCATION_DESC));
-}
-
+d3d12ma :: #library "./lib/d3d12ma";
 #import "Windows";
 #import "d3d12";
 #import "dxgi";
